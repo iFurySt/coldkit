@@ -1,0 +1,45 @@
+{
+  "name": "coldkit",
+  "version": "0.1.0",
+  "description": "Offline-first wallet safety toolkit CLI and MCP server.",
+  "license": "MIT",
+  "homepage": "https://github.com/iFurySt/coldkit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iFurySt/coldkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iFurySt/coldkit/issues"
+  },
+  "bin": {
+    "ck": "npm/bin/ck.js",
+    "ck-mcp": "npm/bin/ck-mcp.js"
+  },
+  "optionalDependencies": {
+    "@ifuryst/coldkit-darwin-arm64": "0.1.0",
+    "@ifuryst/coldkit-darwin-x64": "0.1.0",
+    "@ifuryst/coldkit-linux-arm64": "0.1.0",
+    "@ifuryst/coldkit-linux-x64": "0.1.0",
+    "@ifuryst/coldkit-win32-arm64": "0.1.0",
+    "@ifuryst/coldkit-win32-x64": "0.1.0"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "npm/bin/",
+    "npm/lib/"
+  ],
+  "scripts": {
+    "build": "go build -o bin/ck ./cmd/ck && go build -o bin/ck-mcp ./cmd/ck-mcp",
+    "build:npm-platform-packages": "node scripts/build-npm-platform-packages.js",
+    "test": "go test ./..."
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "provenance": true
+  }
+}

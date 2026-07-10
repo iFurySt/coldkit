@@ -23,6 +23,15 @@ go build -o bin/ck ./cmd/ck
 go build -o bin/ck-mcp ./cmd/ck-mcp
 ```
 
+## Install With npm
+
+```sh
+npm install -g coldkit
+```
+
+The npm package installs prebuilt `ck` and `ck-mcp` binaries for macOS, Linux,
+and Windows on x64 and arm64 through platform-specific optional packages.
+
 ## CLI
 
 Generate a normal TRON account offline:

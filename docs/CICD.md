@@ -1,13 +1,15 @@
 # CI/CD Guide
 
-`coldkit` does not yet ship GitHub Actions workflows. The local project commands
-are real and should become the first CI gate.
+`coldkit` ships minimal GitHub Actions workflows for local gates and npm
+publishing.
 
 ## Current Local Gates
 
 ```sh
 go test ./...
 make build
+npm pack --dry-run
+npm run build:npm-platform-packages
 ```
 
 `make build` produces:
@@ -17,18 +19,39 @@ make build
 
 `bin/` is ignored and should not be committed.
 
-## First CI Workflow
+## CI Workflow
 
-The first pull-request workflow should:
+`.github/workflows/ci.yml` runs on pushes to `main` and pull requests. It:
 
-- set up Go;
-- run `go test ./...`;
-- run `make build`;
-- avoid uploading binaries from pull requests.
+- sets up Go from `go.mod`;
+- sets up Node.js 22;
+- runs `go test ./...`;
+- runs `make build`;
+- builds platform-specific npm binary packages;
+- runs `npm pack --dry-run` for each generated platform package and the root
+  package.
 
-Pin actions to immutable commit SHAs when the workflow is added.
+Actions are pinned to immutable commit SHAs.
 
-## First Release Workflow
+## npm Publishing Workflow
+
+`.github/workflows/npm-publish.yml` runs manually or when a GitHub Release is
+published. It uses npm Trusted Publishing through GitHub Actions OIDC, so the
+repository should not store an npm publish token.
+
+Configure the npm package trusted publisher with:
+
+- Organization or user: `iFurySt`
+- Repository: `coldkit`
+- Workflow filename: `npm-publish.yml`
+- Allowed action: `npm publish`
+
+The workflow grants `id-token: write`, uses Node.js 22, updates npm to the
+latest CLI, runs tests, publishes platform-specific optional binary packages,
+and then publishes the root `coldkit` package with provenance enabled by
+`package.json`.
+
+## First Release Artifacts
 
 The first release workflow should:
 
@@ -42,7 +65,7 @@ The first release workflow should:
 
 - OSV scanning.
 - SPDX SBOM.
-- Signed provenance.
+- Signed provenance for non-npm release artifacts.
 - Reproducible build documentation.
 
 If release automation is added, update `docs/SUPPLY_CHAIN_SECURITY.md` and

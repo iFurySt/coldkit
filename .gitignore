@@ -19,6 +19,7 @@ temp/
 
 # Dependency caches and common build output
 node_modules/
+npm/dist-packages/
 .pnpm-store/
 .npm/
 .yarn/
@@ -28,7 +29,7 @@ dist/
 build/
 coverage/
 target/
-bin/
+/bin/
 obj/
 .cache/
 

@@ -1,0 +1,48 @@
+name: Publish npm
+
+on:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build npm platform packages
+        run: npm run build:npm-platform-packages
+
+      - name: Publish npm platform packages
+        run: |
+          for package_dir in npm/dist-packages/@ifuryst/*; do
+            npm publish "$package_dir"
+          done
+
+      - name: Publish npm package
+        run: npm publish

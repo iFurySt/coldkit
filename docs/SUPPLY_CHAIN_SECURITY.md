@@ -7,22 +7,27 @@ This document records the current dependency and release posture for `coldkit`.
 - Go dependencies are declared in `go.mod` and locked in `go.sum`.
 - Runtime dependencies are intentionally small: Cobra for CLI wiring and `golang.org/x/crypto/sha3` for legacy Keccak-256.
 - Cold key-generation paths do not depend on npm, pip, external services, or generated code.
-- There is no automated CI, SBOM, vulnerability scanning, or release provenance workflow yet.
+- GitHub Actions runs Go tests, Go builds, and npm package dry-runs.
+- The npm package is configured for Trusted Publishing through GitHub Actions
+  OIDC and provenance. The root package depends on platform-specific optional
+  binary packages instead of bundling every binary into one tarball.
+- There is no SBOM or vulnerability scanning workflow yet.
 
 ## Rules
 
 - Keep `go.mod` and `go.sum` committed.
 - Prefer Go standard library or small, auditable dependencies.
 - Do not add telemetry, webhook export, remote signing, or secret-upload dependencies.
-- Pin GitHub Actions to immutable commit SHAs when CI is introduced.
+- Pin GitHub Actions to immutable commit SHAs.
+- Do not commit npm publish tokens. Use npm Trusted Publishing for CI releases.
 
 ## Tooling To Add Later
 
-- `go test ./...` in GitHub Actions.
 - OSV scanning for Go dependencies.
 - Release checksums for `ck` and `ck-mcp`.
 - SPDX SBOM artifacts for release builds.
-- Signed build provenance after release automation exists.
+- Signed build provenance for non-npm release artifacts after release automation
+  exists.
 
 ## Release Assumptions
 
