@@ -1,6 +1,7 @@
 # Quality Score
 
-Track quality by product area and architectural layer so agents can prioritize the weakest parts of the system.
+Track quality by product area and architectural layer so agents can prioritize
+the weakest parts of the system.
 
 ## Suggested Scale
 
@@ -9,12 +10,12 @@ Track quality by product area and architectural layer so agents can prioritize t
 - `C`: works but needs targeted hardening.
 - `D`: fragile or underspecified.
 
-## Initial Template
+## Current Score
 
 | Area | Score | Why | Next Step |
 | --- | --- | --- | --- |
-| Product surface | D | Not yet defined. | Define the first user journey and acceptance criteria. |
-| Architecture docs | C | Base scaffold exists but needs project-specific content. | Fill in `docs/ARCHITECTURE.md`. |
-| Testing | D | No stack-specific tests yet. | Add a minimal smoke path with one real command. |
-| Observability | D | No local stack or conventions yet. | Document logs, metrics, traces, local access, and future pipeline access. |
-| Security | C | Defaults are documented, implementation is pending. | Add real auth, secret, and dependency rules. |
+| Product surface | B | First TRON CLI and MCP surface exists with offline generation, validation, watch-only balances, JSON output, and secret-tool gating. | Add packaged releases and documented MCP client examples. |
+| Architecture docs | B | Repository boundaries are now project-specific and chain extensibility is documented. | Add a focused MCP protocol note if the server grows. |
+| Testing | B | Unit tests cover TRON vectors, vanity matching, watch-only balance parsing, and MCP tool exposure. CLI smoke commands have been run locally. | Add CI running `go test ./...` and release builds. |
+| Observability | C | CLI/MCP are simple and mostly synchronous; there is no structured logging convention yet. | Add debug/progress output for long vanity searches without leaking secrets. |
+| Security | B | Cold/watch-only boundary and MCP secret gating are explicit. | Add reproducible release checksums and supply-chain scanning. |

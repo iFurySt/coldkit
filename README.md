@@ -1,37 +1,112 @@
 # coldkit
 
-中文版本：[`coldkit-cn`](https://github.com/iFurySt/coldkit-cn)
+`coldkit` is an offline-first wallet safety toolkit for humans and AI agents.
 
-## Intro
+The first supported chain is TRON. The CLI binary is `ck`; the MCP server binary
+is `ck-mcp`.
 
-An agent-first base repo template for building any product you want. For a closer look at how this approach works in daily practice, see [Daily Harness](https://www.ifuryst.com/en/blog/2026/daily-harness/).
+The project is intentionally not a full wallet. It focuses on address
+generation, validation, watch-only balance checks, and agent-safe MCP tools with
+clear cold/hot boundaries.
 
-## Quick Start
+## Security Model
 
-Use GitHub's template flow from the top right of this repository:
+- Cold commands such as `ck tron gen`, `ck tron val`, and `ck tron self` do not perform network I/O.
+- Watch-only commands such as `ck tron bal` accept public addresses only.
+- `ck-mcp` hides private-key-returning tools by default.
+- Use private-key generation only on an offline machine.
 
-1. Select **Use this template**.
-2. Select [**Create a new repository**](https://github.com/new?template_name=coldkit&template_owner=iFurySt).
-
-Or initialize a new or existing repository with [`harness-cli`](https://github.com/iFurySt/harness-cli).
-Install it from npm first:
-
-```sh
-npm install -g @ifuryst/harness-cli
-```
-
-Then run:
+## Install From Source
 
 ```sh
-harness-cli init --language en
+go build -o bin/ck ./cmd/ck
+go build -o bin/ck-mcp ./cmd/ck-mcp
 ```
 
-`harness-cli` requires Node.js 18+ and Go on your `PATH`.
+## CLI
+
+Generate a normal TRON account offline:
+
+```sh
+ck tron gen -j
+```
+
+Generate vanity addresses with multiple suffixes:
+
+```sh
+ck tron gen -s 888 -s xyz -n 3 -j
+```
+
+Generate a public preview without printing private keys:
+
+```sh
+ck tron gen -s 888 -n 1 --pub -j
+```
+
+Validate a public TRON address offline:
+
+```sh
+ck tron val TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
+```
+
+Check TRX and USDT/TRC20 balances for a public address:
+
+```sh
+ck tron bal TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
+```
+
+Run deterministic crypto test vectors:
+
+```sh
+ck self
+```
+
+Detailed CLI conventions live in [docs/CLI.md](docs/CLI.md).
+
+## MCP
+
+Safe watch-only/default mode:
+
+```sh
+ck-mcp
+```
+
+Offline secret mode:
+
+```sh
+ck-mcp --enable-secret-tools
+```
+
+Default tools:
+
+- `tron_validate`
+- `tron_balance`
+- `tron_generate_preview`
+
+Secret tool, only exposed with `--enable-secret-tools`:
+
+- `tron_generate_secret`
+
+Detailed MCP conventions live in [docs/MCP.md](docs/MCP.md).
+
+## Project Docs
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Threat Model](docs/THREAT_MODEL.md)
+- [Security](docs/SECURITY.md)
+- [Product Sense](docs/PRODUCT_SENSE.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Reliability](docs/RELIABILITY.md)
+- [Supply Chain Security](docs/SUPPLY_CHAIN_SECURITY.md)
+
+## Development
+
+```sh
+go test ./...
+go run ./cmd/ck self
+go run ./cmd/ck tron gen -s 2 -s 3 -n 2 --max 10000 --pub -j
+```
 
 ## License
 
 [MIT](LICENSE)
-
-## Note
-
-This approach comes from our own exploration, while also drawing on some ideas from OpenAI's [harness engineering write-up](https://openai.com/index/harness-engineering/).

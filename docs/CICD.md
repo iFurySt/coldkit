@@ -1,29 +1,49 @@
 # CI/CD Guide
 
-This template no longer ships default GitHub Actions CI/CD scaffolding.
+`coldkit` does not yet ship GitHub Actions workflows. The local project commands
+are real and should become the first CI gate.
 
-## Current State
+## Current Local Gates
 
-- There are no default workflows under `.github/workflows/`.
-- The repository no longer provides `make ci`, `scripts/ci.sh`, or `scripts/release-package.sh`.
-- Add testing, build, scanning, release, and deployment workflows later when the real project stack is known.
+```sh
+go test ./...
+make build
+```
 
-## Design Principle
+`make build` produces:
 
-CI/CD should serve the real project instead of preserving placeholder automation in the template.
+- `bin/ck`
+- `bin/ck-mcp`
 
-Once the stack is known, start with the smallest real validation path, then add build artifacts, supply-chain scanning, release, and deployment. Pin new GitHub Actions to commit SHAs instead of floating tags.
+`bin/` is ignored and should not be committed.
 
-## Recommended Customization Sequence
+## First CI Workflow
 
-1. Define the project's own local validation command.
-2. Add a minimal pull-request gate that runs real tests, lint, or smoke checks.
-3. Add packaging, SBOM, and provenance after a real deliverable exists.
-4. Add environment-specific deployment jobs after a real runtime and target environment exist.
-5. Document all pipeline entry points and release artifacts in this file.
+The first pull-request workflow should:
 
-## When Adding CI/CD Back
+- set up Go;
+- run `go test ./...`;
+- run `make build`;
+- avoid uploading binaries from pull requests.
 
-- Do not restore workflows that only package placeholder metadata.
-- Do not expose stale or unmaintained commands in `Makefile`.
-- If release automation is added, update `docs/SUPPLY_CHAIN_SECURITY.md` and `docs/releases/README.md` in the same change.
+Pin actions to immutable commit SHAs when the workflow is added.
+
+## First Release Workflow
+
+The first release workflow should:
+
+- build `ck` and `ck-mcp` for macOS, Linux, and Windows;
+- publish checksums;
+- include a short security note about offline secret generation;
+- avoid any automatic secret generation in CI;
+- update `docs/releases/` with user-facing notes.
+
+## Later Supply-Chain Work
+
+- OSV scanning.
+- SPDX SBOM.
+- Signed provenance.
+- Reproducible build documentation.
+
+If release automation is added, update `docs/SUPPLY_CHAIN_SECURITY.md` and
+`docs/releases/README.md` in the same change.

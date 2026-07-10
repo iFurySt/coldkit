@@ -1,34 +1,31 @@
 # Supply Chain Security
 
-This document records the template's current supply-chain posture and the controls to add when the project becomes real.
+This document records the current dependency and release posture for `coldkit`.
 
 ## Current State
 
-This template no longer ships default GitHub Actions supply-chain scanning or release provenance workflows.
+- Go dependencies are declared in `go.mod` and locked in `go.sum`.
+- Runtime dependencies are intentionally small: Cobra for CLI wiring and `golang.org/x/crypto/sha3` for legacy Keccak-256.
+- Cold key-generation paths do not depend on npm, pip, external services, or generated code.
+- There is no automated CI, SBOM, vulnerability scanning, or release provenance workflow yet.
 
-The remaining defaults are:
+## Rules
 
-- Do not commit secrets, tokens, or local private configuration.
-- Commit auditable dependency manifests and lockfiles once the real project stack exists.
-- Pin new GitHub Actions to immutable commit SHAs instead of floating tags.
+- Keep `go.mod` and `go.sum` committed.
+- Prefer Go standard library or small, auditable dependencies.
+- Do not add telemetry, webhook export, remote signing, or secret-upload dependencies.
+- Pin GitHub Actions to immutable commit SHAs when CI is introduced.
 
 ## Tooling To Add Later
 
-- `actions/dependency-review-action`: reviews pull-request dependency changes.
-- `google/osv-scanner-action`: scans for known open source vulnerabilities.
-- `anchore/sbom-action`: generates an SPDX SBOM artifact.
-- `actions/attest-build-provenance`: generates signed build provenance for release artifacts.
+- `go test ./...` in GitHub Actions.
+- OSV scanning for Go dependencies.
+- Release checksums for `ck` and `ck-mcp`.
+- SPDX SBOM artifacts for release builds.
+- Signed build provenance after release automation exists.
 
-## Limits And Assumptions
+## Release Assumptions
 
-- Dependency Review is available for public repositories and private repositories with GitHub Advanced Security.
-- There is no automated dependency audit, SBOM, or provenance output right now.
-- Reintroduce supply-chain automation after the project stack is known.
-- OpenSSF Scorecard is intentionally not enabled by default because a new template repository has no real branch protection, release history, or SAST posture to score. Add it back after repository rules are configured.
-
-## What To Do When The Project Becomes Real
-
-- Add ecosystem-specific lockfiles and keep them committed.
-- Make the build deterministic and produce explicit versioned artifacts.
-- Gate production deployment on release artifact provenance verification when possible.
-- Consider verifying attestations in the deployment environment or cluster admission layer.
+The first release should produce static-ish single-file binaries for macOS,
+Linux, and Windows where possible. Every release should publish checksums and
+clearly mark `ck-mcp --enable-secret-tools` as offline-only.
