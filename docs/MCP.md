@@ -35,6 +35,18 @@ Secret tools:
 
 - `tron_generate_secret`: generate TRON accounts and return private keys. Disabled by default.
 
+## Install Into Agents
+
+Use `ck add-mcp` to register `ck-mcp` with supported agent clients:
+
+```sh
+ck add-mcp codex
+ck add-mcp claude-code
+```
+
+`cloud-code` is accepted as an alias for `claude-code`. User-level installs are
+the default. Use `--project` for project-local agent configuration.
+
 ## Tool Naming
 
 MCP tools use `<chain>_<action>`:

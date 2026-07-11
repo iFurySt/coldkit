@@ -19,6 +19,9 @@ npm run build:npm-platform-packages
 
 `bin/` is ignored and should not be committed.
 
+The npm root package exposes `ck` and `coldkit` as aliases for the same CLI
+launcher, plus `ck-mcp` for the MCP server.
+
 ## CI Workflow
 
 `.github/workflows/ci.yml` runs on pushes to `main` and pull requests. It:

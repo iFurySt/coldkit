@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ifuryst/coldkit/internal/mcpinstall"
 	"github.com/ifuryst/coldkit/internal/tron"
 	"github.com/spf13/cobra"
 )
@@ -19,8 +20,50 @@ func NewCommand() *cobra.Command {
 		SilenceUsage: true,
 	}
 	root.AddCommand(newTronCommand())
+	root.AddCommand(newAddMCPCommand())
 	root.AddCommand(newSelfCommand())
 	return root
+}
+
+func newAddMCPCommand() *cobra.Command {
+	var project bool
+	var command string
+	var name string
+	cmd := &cobra.Command{
+		Use:     "add-mcp AGENT",
+		Aliases: []string{"install-mcp"},
+		Short:   "install the coldkit MCP server for an agent",
+		Example: "  ck add-mcp codex\n  ck add-mcp claude-code\n  ck add-mcp cloud-code --project",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			agent, err := mcpinstall.ResolveAgent(args[0])
+			if err != nil {
+				return err
+			}
+			result, err := mcpinstall.Install(mcpinstall.Options{
+				Agent:      agent,
+				Project:    project,
+				ServerName: name,
+				Command:    command,
+			})
+			if err != nil {
+				return err
+			}
+
+			scope := "global"
+			if result.Project {
+				scope = "project"
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Installed %s MCP server for %s (%s)\n", result.ServerName, result.Display, scope)
+			fmt.Fprintf(cmd.OutOrStdout(), "Config:  %s\n", result.Path)
+			fmt.Fprintf(cmd.OutOrStdout(), "Command: %s\n", result.Command)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&project, "project", false, "install to project-level config instead of user config")
+	cmd.Flags().StringVar(&command, "command", "", "MCP server command to write; defaults to a sibling ck-mcp binary when available")
+	cmd.Flags().StringVar(&name, "name", "coldkit", "MCP server name")
+	return cmd
 }
 
 func newTronCommand() *cobra.Command {

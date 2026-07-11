@@ -9,6 +9,7 @@ humans and scripts, plus an MCP server for AI agents.
 - `cmd/ck-mcp/`: stdio MCP server entry point. It exposes safe watch-only tools by default and secret-returning tools only when explicitly enabled.
 - `internal/cli/`: Cobra command wiring and human/JSON output formatting.
 - `internal/mcp/`: minimal JSON-RPC stdio MCP server implementation and tool dispatch.
+- `internal/mcpinstall/`: agent-specific MCP config installers for `ck-mcp`.
 - `internal/tron/`: TRON address generation, Base58Check validation, vanity matching, deterministic self-tests, and watch-only balance lookup.
 - `docs/`: project rules, architecture, histories, and security notes.
 
@@ -26,6 +27,7 @@ humans and scripts, plus an MCP server for AI agents.
 - `ck tron val`: validate public TRON addresses offline.
 - `ck tron bal`: query public TRX and USDT/TRC20 balances.
 - `ck tron from-private`: derive an address from a private key for verification.
+- `ck add-mcp`: install `ck-mcp` into supported agent MCP configs.
 - `ck-mcp`: expose `tron_validate`, `tron_balance`, and `tron_generate_preview`; optionally expose `tron_generate_secret`.
 
 More CLI details live in `docs/CLI.md`; MCP details live in `docs/MCP.md`.

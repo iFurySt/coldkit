@@ -2,8 +2,8 @@
 
 `coldkit` is an offline-first wallet safety toolkit for humans and AI agents.
 
-The first supported chain is TRON. The CLI binary is `ck`; the MCP server binary
-is `ck-mcp`.
+The first supported chain is TRON. The CLI binary is available as `ck` and
+`coldkit`; the MCP server binary is `ck-mcp`.
 
 The project is intentionally not a full wallet. It focuses on address
 generation, validation, watch-only balance checks, and agent-safe MCP tools with
@@ -29,8 +29,9 @@ go build -o bin/ck-mcp ./cmd/ck-mcp
 npm install -g coldkit
 ```
 
-The npm package installs prebuilt `ck` and `ck-mcp` binaries for macOS, Linux,
-and Windows on x64 and arm64 through platform-specific optional packages.
+The npm package installs prebuilt `ck`, `coldkit`, and `ck-mcp` commands for
+macOS, Linux, and Windows on x64 and arm64 through platform-specific optional
+packages.
 
 ## CLI
 

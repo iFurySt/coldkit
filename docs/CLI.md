@@ -1,12 +1,14 @@
 # CLI
 
-The CLI binary is `ck`. Commands are chain-first so the project can grow beyond
-TRON without renaming the tool.
+The CLI binary is available as `ck` and `coldkit`. Both names run the same
+command. Commands are chain-first so the project can grow beyond TRON without
+renaming the tool.
 
 ## Shape
 
 ```sh
 ck <chain> <command> [flags]
+coldkit <chain> <command> [flags]
 ```
 
 Current TRON commands:
@@ -23,6 +25,8 @@ Top-level command:
 
 ```sh
 ck self
+ck add-mcp codex
+ck add-mcp claude-code
 ```
 
 ## Short Flags
@@ -76,6 +80,35 @@ Watch-only commands may perform network I/O:
 - `ck tron bal`
 
 Watch-only commands must never accept private keys.
+
+## MCP Installation
+
+`ck add-mcp <agent>` installs the local `ck-mcp` stdio server into an agent's
+MCP configuration. It defaults to user-level config and writes the nearest
+sibling `ck-mcp` binary path when one exists, falling back to `ck-mcp` from
+`PATH`.
+
+Supported agents:
+
+- `codex`: writes `~/.codex/config.toml`, or `$CODEX_HOME/config.toml` when
+  `CODEX_HOME` is set.
+- `claude-code`: writes `~/.claude.json`.
+
+Aliases:
+
+- `cloud-code` and `claude` are accepted as aliases for `claude-code`.
+
+Examples:
+
+```sh
+ck add-mcp codex
+ck add-mcp cloud-code
+ck add-mcp codex --project
+ck add-mcp claude-code --command /absolute/path/to/ck-mcp
+```
+
+Project installs write `.codex/config.toml` for Codex and `.mcp.json` for
+Claude Code.
 
 ## Future Chains
 
