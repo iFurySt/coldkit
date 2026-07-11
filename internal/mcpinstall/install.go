@@ -53,7 +53,7 @@ var serverNamePattern = regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
 func SupportedAgents() []AgentInfo {
 	return []AgentInfo{
 		{Name: AgentCodex, DisplayName: "Codex"},
-		{Name: AgentClaudeCode, DisplayName: "Claude Code", Aliases: []string{"claude", "cloud-code"}},
+		{Name: AgentClaudeCode, DisplayName: "Claude Code", Aliases: []string{"claude"}},
 	}
 }
 

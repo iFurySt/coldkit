@@ -33,7 +33,7 @@ func newAddMCPCommand() *cobra.Command {
 		Use:     "add-mcp AGENT",
 		Aliases: []string{"install-mcp"},
 		Short:   "install the coldkit MCP server for an agent",
-		Example: "  ck add-mcp codex\n  ck add-mcp claude-code\n  ck add-mcp cloud-code --project",
+		Example: "  ck add-mcp codex\n  ck add-mcp claude-code\n  ck add-mcp claude-code --project",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			agent, err := mcpinstall.ResolveAgent(args[0])

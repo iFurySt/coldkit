@@ -11,10 +11,13 @@ the existing `ck` CLI.
 
 - Added `internal/mcpinstall` for agent-specific config writes.
 - Added `ck add-mcp AGENT` and `ck install-mcp AGENT` CLI entry points.
-- Supported `codex`, `claude-code`, and the `cloud-code`/`claude` aliases.
+- Supported `codex`, `claude-code`, and the `claude` alias. The earlier
+  `cloud-code` typo remains accepted as hidden compatibility.
 - Wrote Codex config to TOML and Claude Code config to JSON.
 - Added the `coldkit` npm bin alias for the same CLI launcher used by `ck`.
 - Bumped npm package versions to `0.1.1` for the patch release.
+- Bumped npm package versions to `0.1.2` to remove the `cloud-code` typo from
+  user-facing CLI help and documentation.
 - Updated pinned GitHub Actions to current Node 24-compatible releases after
   publish validation surfaced runtime deprecation annotations.
 - Documented MCP installation in CLI and MCP docs.

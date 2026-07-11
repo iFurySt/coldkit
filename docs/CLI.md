@@ -96,13 +96,13 @@ Supported agents:
 
 Aliases:
 
-- `cloud-code` and `claude` are accepted as aliases for `claude-code`.
+- `claude` is accepted as an alias for `claude-code`.
 
 Examples:
 
 ```sh
 ck add-mcp codex
-ck add-mcp cloud-code
+ck add-mcp claude-code
 ck add-mcp codex --project
 ck add-mcp claude-code --command /absolute/path/to/ck-mcp
 ```

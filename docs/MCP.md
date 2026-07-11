@@ -44,8 +44,8 @@ ck add-mcp codex
 ck add-mcp claude-code
 ```
 
-`cloud-code` is accepted as an alias for `claude-code`. User-level installs are
-the default. Use `--project` for project-local agent configuration.
+`claude` is accepted as an alias for `claude-code`. User-level installs are the
+default. Use `--project` for project-local agent configuration.
 
 ## Tool Naming
 
