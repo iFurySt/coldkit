@@ -22,6 +22,10 @@ npm run build:npm-platform-packages
 The npm root package exposes `ck` and `coldkit` as aliases for the same CLI
 launcher, plus `ck-mcp` for the MCP server.
 
+The launcher prefers the installed platform optional package. If a global npm
+install skips optional dependencies, it falls back to `npm exec` for the matching
+versioned platform package.
+
 ## CI Workflow
 
 `.github/workflows/ci.yml` runs on pushes to `main` and pull requests. It:

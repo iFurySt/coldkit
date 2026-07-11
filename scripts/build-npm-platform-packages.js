@@ -53,6 +53,8 @@ function buildGoBinary(target, output, pkg) {
 }
 
 function platformPackage(packageName, target) {
+  const extension = target.goos === "windows" ? ".exe" : "";
+
   return {
     name: packageName,
     version: rootPackage.version,
@@ -63,6 +65,10 @@ function platformPackage(packageName, target) {
     bugs: rootPackage.bugs,
     os: [target.nodePlatform],
     cpu: [target.nodeArch],
+    bin: {
+      ck: `bin/ck${extension}`,
+      "ck-mcp": `bin/ck-mcp${extension}`
+    },
     files: ["bin/", "LICENSE", "README.md"],
     publishConfig: rootPackage.publishConfig
   };

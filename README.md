@@ -33,6 +33,16 @@ The npm package installs prebuilt `ck`, `coldkit`, and `ck-mcp` commands for
 macOS, Linux, and Windows on x64 and arm64 through platform-specific optional
 packages.
 
+For offline use after installation, make sure npm installs the matching
+platform package:
+
+```sh
+npm install -g --include=optional coldkit
+```
+
+If npm skips optional packages during a global install, the launcher falls back
+to fetching the matching platform package with `npm exec` on first run.
+
 ## CLI
 
 Generate a normal TRON account offline:

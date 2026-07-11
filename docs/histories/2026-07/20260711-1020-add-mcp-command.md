@@ -18,6 +18,9 @@ the existing `ck` CLI.
 - Bumped npm package versions to `0.1.1` for the patch release.
 - Bumped npm package versions to `0.1.2` to remove the `cloud-code` typo from
   user-facing CLI help and documentation.
+- Bumped npm package versions to `0.1.3`, added platform package bin metadata,
+  and made the root launcher fall back through `npm exec` if npm skips the
+  platform optional dependency during global install.
 - Updated pinned GitHub Actions to current Node 24-compatible releases after
   publish validation surfaced runtime deprecation annotations.
 - Documented MCP installation in CLI and MCP docs.
@@ -34,9 +37,12 @@ files.
 - `internal/mcpinstall/install_test.go`
 - `internal/cli/command.go`
 - `package.json`
+- `npm/lib/run-binary.js`
+- `scripts/build-npm-platform-packages.js`
 - `.github/workflows/ci.yml`
 - `.github/workflows/npm-publish.yml`
 - `README.md`
+- `docs/CICD.md`
 - `docs/CLI.md`
 - `docs/MCP.md`
 - `docs/ARCHITECTURE.md`

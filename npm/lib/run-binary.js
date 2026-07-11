@@ -1,6 +1,7 @@
 "use strict";
 
 const { spawnSync } = require("node:child_process");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const platformMap = {
@@ -26,10 +27,13 @@ function runBinary(name) {
   const executable = process.platform === "win32" ? `${name}.exe` : name;
   const packageName = `@ifuryst/coldkit-${platform.packagePlatform}-${arch.packageArch}`;
   const binaryPath = resolvePackagedBinary(packageName, executable);
-  const result = spawnSync(binaryPath, process.argv.slice(2), { stdio: "inherit" });
+  const result = binaryPath
+    ? spawnSync(binaryPath, process.argv.slice(2), { stdio: "inherit" })
+    : runViaNpmExec(packageName, name);
 
   if (result.error) {
-    console.error(`Failed to run ${binaryPath}: ${result.error.message}`);
+    const target = binaryPath || `${packageName}/${name}`;
+    console.error(`Failed to run ${target}: ${result.error.message}`);
     process.exit(1);
   }
 
@@ -51,11 +55,22 @@ function resolvePackagedBinary(packageName, executable) {
     );
 
     if (error && error.code === "MODULE_NOT_FOUND") {
-      return localBinary;
+      return fs.existsSync(localBinary) ? localBinary : "";
     }
 
     throw error;
   }
+}
+
+function runViaNpmExec(packageName, name) {
+  const rootPackage = require("../../package.json");
+  const version = rootPackage.optionalDependencies[packageName] || rootPackage.version;
+  const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  return spawnSync(
+    npm,
+    ["exec", "--yes", "--package", `${packageName}@${version}`, "--", name, ...process.argv.slice(2)],
+    { stdio: "inherit" }
+  );
 }
 
 module.exports = { runBinary };
