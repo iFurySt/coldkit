@@ -1,6 +1,6 @@
 {
   "name": "coldkit",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Offline-first wallet safety toolkit CLI and MCP server.",
   "license": "MIT",
   "homepage": "https://github.com/iFurySt/coldkit#readme",
@@ -17,12 +17,12 @@
     "ck-mcp": "npm/bin/ck-mcp.js"
   },
   "optionalDependencies": {
-    "@ifuryst/coldkit-darwin-arm64": "0.1.4",
-    "@ifuryst/coldkit-darwin-x64": "0.1.4",
-    "@ifuryst/coldkit-linux-arm64": "0.1.4",
-    "@ifuryst/coldkit-linux-x64": "0.1.4",
-    "@ifuryst/coldkit-win32-arm64": "0.1.4",
-    "@ifuryst/coldkit-win32-x64": "0.1.4"
+    "@ifuryst/coldkit-darwin-arm64": "0.1.5",
+    "@ifuryst/coldkit-darwin-x64": "0.1.5",
+    "@ifuryst/coldkit-linux-arm64": "0.1.5",
+    "@ifuryst/coldkit-linux-x64": "0.1.5",
+    "@ifuryst/coldkit-win32-arm64": "0.1.5",
+    "@ifuryst/coldkit-win32-x64": "0.1.5"
   },
   "files": [
     "LICENSE",

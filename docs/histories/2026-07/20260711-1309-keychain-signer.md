@@ -28,6 +28,9 @@ private keys, starting with macOS Keychain authorization.
   binary release.
 - Added `ck keychain import-tron`, `ck keychain show-tron`, and
   `ck keychain delete`.
+- Added a post-write Keychain read-back check so imports fail immediately if
+  macOS reports success but the stored item cannot be resolved from the active
+  Keychain search list.
 - Added `ck tron sign-hash --key NAME` for local Keychain-backed signing.
 - Added MCP tool `tron_sign_hash`, which returns a signature result and never
   returns private keys.

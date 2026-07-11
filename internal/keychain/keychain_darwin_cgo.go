@@ -219,6 +219,13 @@ func storeSecret(account string, secret string, comment string) error {
 	if status != C.errSecSuccess {
 		return fmt.Errorf("store key in macOS Keychain: %s", osStatusError(status))
 	}
+
+	var data C.CFDataRef
+	status = C.coldkitCopyGenericPassword(serviceC, accountC, nil, &data)
+	if status != C.errSecSuccess {
+		return fmt.Errorf("verify stored macOS Keychain item: %s", osStatusError(status))
+	}
+	C.CFRelease(C.CFTypeRef(data))
 	return nil
 }
 
