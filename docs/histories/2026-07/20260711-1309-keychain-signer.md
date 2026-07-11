@@ -17,6 +17,9 @@ private keys, starting with macOS Keychain authorization.
   binaries via `COLDKIT_CODESIGN_IDENTITY`.
 - Moved npm publishing to a macOS runner so Darwin packages include the native
   Keychain backend.
+- Added the imported CI signing keychain to the user search list before
+  invoking `codesign`, avoiding direct keychain lookup failures on GitHub
+  Actions.
 - Registered Apple Developer Bundle ID `com.ifuryst.coldkit` under team
   `J9P29FA5BX`.
 - Configured GitHub Actions secrets for Developer ID signing and notary

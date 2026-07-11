@@ -58,6 +58,7 @@ jobs:
           security unlock-keychain -p "${keychain_password}" "${keychain_path}"
           security import "${cert_path}" -k "${keychain_path}" -P "${COLDKIT_CODESIGN_P12_PASSWORD}" -T /usr/bin/codesign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${keychain_password}" "${keychain_path}"
+          security list-keychains -d user -s "${keychain_path}" $(security list-keychains -d user | tr -d '"')
 
           resolved_identity="${COLDKIT_CODESIGN_IDENTITY:-}"
           if [ -z "${resolved_identity}" ]; then
@@ -72,7 +73,6 @@ jobs:
 
           {
             echo "COLDKIT_CODESIGN_IDENTITY=${resolved_identity}"
-            echo "COLDKIT_CODESIGN_KEYCHAIN=${keychain_path}"
           } >> "${GITHUB_ENV}"
 
       - name: Build npm platform packages
