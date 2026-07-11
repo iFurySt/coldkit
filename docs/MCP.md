@@ -30,6 +30,8 @@ Default tools:
 - `tron_validate`: validate a public TRON address offline.
 - `tron_balance`: check public TRX and USDT/TRC20 balances.
 - `tron_generate_preview`: generate public address previews without returning private keys.
+- `tron_sign_hash`: sign a 32-byte digest with a TRON key stored in macOS
+  Keychain. The private key is not returned; macOS authorizes Keychain access.
 
 Secret tools:
 
@@ -55,6 +57,7 @@ MCP tools use `<chain>_<action>`:
 tron_validate
 tron_balance
 tron_generate_preview
+tron_sign_hash
 tron_generate_secret
 ```
 
@@ -70,6 +73,8 @@ sol_balance
 
 - Do not expose secret tools by default.
 - Do not accept private keys in watch-only tools.
+- Signing tools may request local OS authorization, but must return signatures
+  or signed payloads only, never private keys.
 - Tool descriptions must clearly say when a tool performs network I/O.
 - Tool descriptions must clearly say when a tool can return private keys.
 - Prefer JSON content in text responses so agents can parse deterministic fields.

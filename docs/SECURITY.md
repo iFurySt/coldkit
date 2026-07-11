@@ -8,6 +8,9 @@ not an optional hardening pass.
 - Private keys must never be sent to watch-only commands or MCP tools.
 - `ck-mcp` must not expose private-key-returning tools unless started with `--enable-secret-tools`.
 - Users should run secret-generating commands only on offline machines.
+- Keychain-backed signing commands may load a private key inside the local
+  `coldkit` process after OS authorization, but must only print signatures,
+  signed payloads, or public metadata.
 - Do not add clipboard, webhook, POST, telemetry, or remote export paths for secret material.
 
 ## Network Boundaries
@@ -20,6 +23,10 @@ not an optional hardening pass.
 
 - `ck tron gen` prints private keys unless `--pub` is used.
 - `ck tron from-private` accepts a private key and should be used only offline.
+- `ck keychain import-tron` accepts a private key for local macOS Keychain
+  import and should not be driven by an AI agent.
+- `ck tron sign-hash --key NAME` asks macOS Keychain for a stored key and
+  prints a signature, not the private key.
 - `ck-mcp --enable-secret-tools` exposes `tron_generate_secret`; default MCP mode does not expose it.
 
 ## Dependency Rules

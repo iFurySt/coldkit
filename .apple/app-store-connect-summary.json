@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-11",
+  "team": {
+    "name": "Yifan PANG",
+    "id": "J9P29FA5BX"
+  },
+  "bundle": {
+    "name": "coldkit",
+    "identifier": "com.ifuryst.coldkit",
+    "resourceId": "22R3D6N87Q",
+    "platform": "UNIVERSAL",
+    "capabilities": []
+  },
+  "signing": {
+    "developerIdApplication": {
+      "name": "Developer ID Application: Yifan PANG (J9P29FA5BX)",
+      "sha1": "188DEC067AF15D425FCA6B08FD101B9ABD01F571"
+    }
+  },
+  "githubActionsSecrets": [
+    "COLDKIT_CODESIGN_P12_BASE64",
+    "COLDKIT_CODESIGN_P12_PASSWORD",
+    "COLDKIT_CODESIGN_KEYCHAIN_PASSWORD",
+    "COLDKIT_CODESIGN_IDENTITY",
+    "APPLE_DEVELOPER_TEAM_ID",
+    "APPLE_NOTARY_API_KEY_P8_BASE64",
+    "APPLE_NOTARY_KEY_ID",
+    "APPLE_NOTARY_ISSUER_ID"
+  ]
+}

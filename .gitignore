@@ -17,6 +17,15 @@ temp/
 .env.local
 .env.*.local
 
+# Apple signing exports
+.apple/certs/
+.apple/csr/
+.apple/private/
+.apple/profiles/
+.apple/export/
+.apple/app-store-connect-api/*.p8
+.apple/**/*.p12
+
 # Dependency caches and common build output
 node_modules/
 npm/dist-packages/

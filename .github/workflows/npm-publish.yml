@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
@@ -34,6 +34,46 @@ jobs:
 
       - name: Test
         run: go test ./...
+
+      - name: Prepare coldkit signing config
+        env:
+          COLDKIT_CODESIGN_P12_BASE64: ${{ secrets.COLDKIT_CODESIGN_P12_BASE64 }}
+          COLDKIT_CODESIGN_P12_PASSWORD: ${{ secrets.COLDKIT_CODESIGN_P12_PASSWORD }}
+          COLDKIT_CODESIGN_KEYCHAIN_PASSWORD: ${{ secrets.COLDKIT_CODESIGN_KEYCHAIN_PASSWORD }}
+          COLDKIT_CODESIGN_IDENTITY: ${{ secrets.COLDKIT_CODESIGN_IDENTITY }}
+        run: |
+          if [ -z "${COLDKIT_CODESIGN_P12_BASE64}" ] || [ -z "${COLDKIT_CODESIGN_P12_PASSWORD}" ]; then
+            echo "No coldkit Developer ID signing certificate configured; Darwin npm binaries will be unsigned."
+            exit 0
+          fi
+
+          keychain_password="${COLDKIT_CODESIGN_KEYCHAIN_PASSWORD:-${RUNNER_TEMP}-coldkit-keychain}"
+          cert_path="${RUNNER_TEMP}/coldkit-signing.p12"
+          keychain_path="${RUNNER_TEMP}/coldkit-signing.keychain-db"
+
+          CERT_PATH="${cert_path}" python3 -c 'import base64, os, pathlib; pathlib.Path(os.environ["CERT_PATH"]).write_bytes(base64.b64decode(os.environ["COLDKIT_CODESIGN_P12_BASE64"]))'
+
+          security create-keychain -p "${keychain_password}" "${keychain_path}"
+          security set-keychain-settings -lut 21600 "${keychain_path}"
+          security unlock-keychain -p "${keychain_password}" "${keychain_path}"
+          security import "${cert_path}" -k "${keychain_path}" -P "${COLDKIT_CODESIGN_P12_PASSWORD}" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${keychain_password}" "${keychain_path}"
+
+          resolved_identity="${COLDKIT_CODESIGN_IDENTITY:-}"
+          if [ -z "${resolved_identity}" ]; then
+            resolved_identity="$(security find-identity -v -p codesigning "${keychain_path}" | sed -n 's/.*"\(.*\)"/\1/p' | head -n 1)"
+          fi
+          if [ -z "${resolved_identity}" ]; then
+            echo "Imported signing certificate, but no usable codesigning identity was found in ${keychain_path}." >&2
+            exit 1
+          fi
+
+          echo "Resolved coldkit signing identity: ${resolved_identity}"
+
+          {
+            echo "COLDKIT_CODESIGN_IDENTITY=${resolved_identity}"
+            echo "COLDKIT_CODESIGN_KEYCHAIN=${keychain_path}"
+          } >> "${GITHUB_ENV}"
 
       - name: Build npm platform packages
         run: npm run build:npm-platform-packages

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ifuryst/coldkit/internal/keychain"
 	"github.com/ifuryst/coldkit/internal/tron"
 )
 
@@ -59,6 +60,11 @@ type genArgs struct {
 
 type addressArgs struct {
 	Address string `json:"address"`
+}
+
+type signHashArgs struct {
+	KeyName   string `json:"key_name"`
+	DigestHex string `json:"digest_hex"`
 }
 
 func NewServer(config Config) *Server {
@@ -150,6 +156,14 @@ func (s *Server) tools() []tool {
 			Description: "Generate TRON address previews without returning private keys. Generated addresses are not usable for funds unless secret tools are enabled and the matching private key is exported locally.",
 			InputSchema: genSchema(),
 		},
+		{
+			Name:        "tron_sign_hash",
+			Description: "Sign a 32-byte digest with a TRON key stored in macOS Keychain. The private key is not returned; macOS may prompt the user to authorize access.",
+			InputSchema: objectSchema(map[string]any{
+				"key_name":   map[string]any{"type": "string"},
+				"digest_hex": map[string]any{"type": "string", "description": "32-byte digest encoded as 64 hex characters"},
+			}, []string{"key_name", "digest_hex"}),
+		},
 	}
 	if s.config.EnableSecretTools {
 		tools = append(tools, tool{
@@ -204,6 +218,16 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 			return "", err
 		}
 		return marshalText(results)
+	case "tron_sign_hash":
+		var args signHashArgs
+		if err := json.Unmarshal(params.Arguments, &args); err != nil {
+			return "", err
+		}
+		privateKey, err := keychain.LoadTronPrivateKey(args.KeyName)
+		if err != nil {
+			return "", err
+		}
+		return jsonText(tron.SignDigest(privateKey, args.DigestHex))
 	default:
 		return "", fmt.Errorf("unknown tool %q", params.Name)
 	}

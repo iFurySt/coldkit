@@ -8,6 +8,8 @@ const path = require("node:path");
 const rootDir = path.resolve(__dirname, "..");
 const rootPackage = require(path.join(rootDir, "package.json"));
 const outDir = path.join(rootDir, "npm", "dist-packages");
+const codesignIdentity = process.env.COLDKIT_CODESIGN_IDENTITY || "";
+const codesignKeychain = process.env.COLDKIT_CODESIGN_KEYCHAIN || "";
 
 const targets = [
   { nodePlatform: "darwin", nodeArch: "x64", goos: "darwin", goarch: "amd64" },
@@ -28,8 +30,13 @@ for (const target of targets) {
 
   fs.mkdirSync(binDir, { recursive: true });
 
-  buildGoBinary(target, path.join(binDir, `ck${extension}`), "./cmd/ck");
-  buildGoBinary(target, path.join(binDir, `ck-mcp${extension}`), "./cmd/ck-mcp");
+  const ckPath = path.join(binDir, `ck${extension}`);
+  const mcpPath = path.join(binDir, `ck-mcp${extension}`);
+
+  buildGoBinary(target, ckPath, "./cmd/ck");
+  buildGoBinary(target, mcpPath, "./cmd/ck-mcp");
+  signDarwinBinary(target, ckPath);
+  signDarwinBinary(target, mcpPath);
 
   fs.writeFileSync(
     path.join(packageDir, "package.json"),
@@ -39,12 +46,40 @@ for (const target of targets) {
   fs.copyFileSync(path.join(rootDir, "README.md"), path.join(packageDir, "README.md"));
 }
 
+function signDarwinBinary(target, binaryPath) {
+  if (!codesignIdentity || target.goos !== "darwin") {
+    return;
+  }
+  if (process.platform !== "darwin") {
+    throw new Error("COLDKIT_CODESIGN_IDENTITY can only be used on macOS");
+  }
+  execFileSync(
+    "codesign",
+    [
+      "--force",
+      "--timestamp",
+      "--options",
+      "runtime",
+      ...(codesignKeychain ? ["--keychain", codesignKeychain] : []),
+      "--sign",
+      codesignIdentity,
+      binaryPath
+    ],
+    { cwd: rootDir, stdio: "inherit" }
+  );
+  execFileSync("codesign", ["--verify", "--strict", "--verbose=2", binaryPath], {
+    cwd: rootDir,
+    stdio: "inherit"
+  });
+}
+
 function buildGoBinary(target, output, pkg) {
+  const cgoEnabled = target.goos === "darwin" && process.platform === "darwin" ? "1" : "0";
   execFileSync("go", ["build", "-trimpath", "-ldflags=-s -w", "-o", output, pkg], {
     cwd: rootDir,
     env: {
       ...process.env,
-      CGO_ENABLED: "0",
+      CGO_ENABLED: cgoEnabled,
       GOOS: target.goos,
       GOARCH: target.goarch
     },

@@ -26,6 +26,20 @@ The launcher prefers the installed platform optional package. If a global npm
 install skips optional dependencies, it falls back to `npm exec` for the matching
 versioned platform package.
 
+Darwin npm packages need a macOS build host for the native Keychain and
+LocalAuthentication backend. On macOS, `npm run build:npm-platform-packages`
+builds Darwin packages with cgo enabled and cross-compiles Linux/Windows
+packages with cgo disabled.
+
+Set `COLDKIT_CODESIGN_IDENTITY` to sign Darwin binaries during platform package
+builds. `COLDKIT_CODESIGN_KEYCHAIN` is optional and points `codesign` at a
+temporary CI keychain when the identity is not in the default login keychain:
+
+```sh
+COLDKIT_CODESIGN_IDENTITY="Developer ID Application: Example (TEAMID)" \
+  npm run build:npm-platform-packages
+```
+
 ## CI Workflow
 
 `.github/workflows/ci.yml` runs on pushes to `main` and pull requests. It:
@@ -53,10 +67,22 @@ Configure the npm package trusted publisher with:
 - Workflow filename: `npm-publish.yml`
 - Allowed action: `npm publish`
 
-The workflow grants `id-token: write`, uses Node.js 22, updates npm to the
-latest CLI, runs tests, publishes platform-specific optional binary packages,
-and then publishes the root `coldkit` package with provenance enabled by
-`package.json`.
+The workflow grants `id-token: write`, runs on macOS so Darwin packages include
+the native Keychain backend, uses Node.js 22, updates npm to the latest CLI,
+runs tests, publishes platform-specific optional binary packages, and then
+publishes the root `coldkit` package with provenance enabled by `package.json`.
+
+Code signing is optional and controlled by these GitHub Actions secrets:
+
+- `COLDKIT_CODESIGN_P12_BASE64`
+- `COLDKIT_CODESIGN_P12_PASSWORD`
+- `COLDKIT_CODESIGN_KEYCHAIN_PASSWORD`
+- `COLDKIT_CODESIGN_IDENTITY`
+
+The publish workflow imports the Developer ID certificate into a temporary
+keychain and signs Darwin binaries before publishing platform npm packages.
+Notarized zip/pkg release artifacts should be added separately; the npm tarballs
+currently publish signed binaries but are not stapled notarization artifacts.
 
 ## First Release Artifacts
 

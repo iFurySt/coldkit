@@ -8,6 +8,7 @@ humans and scripts, plus an MCP server for AI agents.
 - `cmd/ck/`: main CLI entry point. The public command shape is chain-first, for example `ck tron gen`.
 - `cmd/ck-mcp/`: stdio MCP server entry point. It exposes safe watch-only tools by default and secret-returning tools only when explicitly enabled.
 - `internal/cli/`: Cobra command wiring and human/JSON output formatting.
+- `internal/keychain/`: local key storage adapters, currently macOS Keychain for TRON signing keys.
 - `internal/mcp/`: minimal JSON-RPC stdio MCP server implementation and tool dispatch.
 - `internal/mcpinstall/`: agent-specific MCP config installers for `ck-mcp`.
 - `internal/tron/`: TRON address generation, Base58Check validation, vanity matching, deterministic self-tests, and watch-only balance lookup.
@@ -20,6 +21,8 @@ humans and scripts, plus an MCP server for AI agents.
 - Cold paths must not perform network I/O. Today that includes `ck tron gen`, `ck tron val`, `ck tron from-private`, and `ck tron self`.
 - Watch-only paths can perform network I/O, but must accept public addresses only.
 - Secret-returning MCP tools remain disabled unless `ck-mcp --enable-secret-tools` is used.
+- Signer paths may use local OS secret storage and authorization, but must not
+  return private keys to CLI or MCP callers.
 
 ## Current Product Surface
 
@@ -27,8 +30,12 @@ humans and scripts, plus an MCP server for AI agents.
 - `ck tron val`: validate public TRON addresses offline.
 - `ck tron bal`: query public TRX and USDT/TRC20 balances.
 - `ck tron from-private`: derive an address from a private key for verification.
+- `ck keychain import-tron`: store a TRON private key in macOS Keychain.
+- `ck tron sign-hash`: sign a 32-byte digest using a macOS Keychain-backed TRON key.
 - `ck add-mcp`: install `ck-mcp` into supported agent MCP configs.
-- `ck-mcp`: expose `tron_validate`, `tron_balance`, and `tron_generate_preview`; optionally expose `tron_generate_secret`.
+- `ck-mcp`: expose `tron_validate`, `tron_balance`, `tron_generate_preview`,
+  and Keychain-backed `tron_sign_hash`; optionally expose
+  `tron_generate_secret`.
 
 More CLI details live in `docs/CLI.md`; MCP details live in `docs/MCP.md`.
 

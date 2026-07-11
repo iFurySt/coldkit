@@ -18,6 +18,7 @@ ck tron gen
 ck tron val T...
 ck tron bal T...
 ck tron from-private <PRIVATE_KEY_HEX>
+ck tron sign-hash <DIGEST_HEX> --key main
 ck tron self
 ```
 
@@ -80,6 +81,32 @@ Watch-only commands may perform network I/O:
 - `ck tron bal`
 
 Watch-only commands must never accept private keys.
+
+## macOS Keychain Signing
+
+`ck keychain import-tron NAME` stores a TRON private key in macOS Keychain and
+prints only public metadata. By default it prompts for the private key without
+echoing it:
+
+```sh
+ck keychain import-tron main
+```
+
+For scripted local import, pass the key through stdin explicitly:
+
+```sh
+printf '%s\n' "$TRON_PRIVATE_KEY_HEX" | ck keychain import-tron main --private-key-stdin
+```
+
+Sign a 32-byte digest with the stored key:
+
+```sh
+ck tron sign-hash 1111111111111111111111111111111111111111111111111111111111111111 --key main -j
+```
+
+The signing command asks macOS Keychain for the secret. Depending on local
+Keychain policy, macOS may require Touch ID, Apple Watch, or account password.
+Only the signature result is printed.
 
 ## MCP Installation
 

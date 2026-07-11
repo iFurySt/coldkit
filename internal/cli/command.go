@@ -4,13 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/ifuryst/coldkit/internal/keychain"
 	"github.com/ifuryst/coldkit/internal/mcpinstall"
 	"github.com/ifuryst/coldkit/internal/tron"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func NewCommand() *cobra.Command {
@@ -21,6 +25,7 @@ func NewCommand() *cobra.Command {
 	}
 	root.AddCommand(newTronCommand())
 	root.AddCommand(newAddMCPCommand())
+	root.AddCommand(newKeychainCommand())
 	root.AddCommand(newSelfCommand())
 	return root
 }
@@ -76,8 +81,91 @@ func newTronCommand() *cobra.Command {
 	cmd.AddCommand(newTronFromPrivateCommand())
 	cmd.AddCommand(newTronValidateCommand())
 	cmd.AddCommand(newTronBalanceCommand())
+	cmd.AddCommand(newTronSignHashCommand())
 	cmd.AddCommand(newTronSelfCommand())
 	return cmd
+}
+
+func newKeychainCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "keychain",
+		Short: "store local signing keys in macOS Keychain",
+	}
+	cmd.AddCommand(newKeychainImportTronCommand())
+	cmd.AddCommand(newKeychainShowTronCommand())
+	cmd.AddCommand(newKeychainDeleteCommand())
+	return cmd
+}
+
+func newKeychainImportTronCommand() *cobra.Command {
+	var asJSON bool
+	var privateKeyStdin bool
+	cmd := &cobra.Command{
+		Use:   "import-tron NAME",
+		Short: "import a TRON private key into macOS Keychain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			privateKey, err := readPrivateKey(cmd, privateKeyStdin)
+			if err != nil {
+				return err
+			}
+			key, err := keychain.ImportTronPrivateKey(args[0], privateKey)
+			if err != nil {
+				return err
+			}
+			if asJSON {
+				return writeJSONTo(cmd.OutOrStdout(), key)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Stored TRON key:   %s\n", key.Name)
+			fmt.Fprintf(cmd.OutOrStdout(), "TRON address:      %s\n", key.AddressBase58)
+			fmt.Fprintf(cmd.OutOrStdout(), "TRON hex address:  %s\n", key.AddressHex)
+			fmt.Fprintf(cmd.OutOrStdout(), "Public key hex:    %s\n", key.PublicKeyHex)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	cmd.Flags().BoolVar(&privateKeyStdin, "private-key-stdin", false, "read the private key from stdin instead of prompting")
+	return cmd
+}
+
+func newKeychainShowTronCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "show-tron NAME",
+		Short: "show public metadata for a TRON key stored in macOS Keychain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			key, err := keychain.DescribeTronKey(args[0])
+			if err != nil {
+				return err
+			}
+			if asJSON {
+				return writeJSONTo(cmd.OutOrStdout(), key)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Stored TRON key:   %s\n", key.Name)
+			fmt.Fprintf(cmd.OutOrStdout(), "TRON address:      %s\n", key.AddressBase58)
+			fmt.Fprintf(cmd.OutOrStdout(), "TRON hex address:  %s\n", key.AddressHex)
+			fmt.Fprintf(cmd.OutOrStdout(), "Public key hex:    %s\n", key.PublicKeyHex)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	return cmd
+}
+
+func newKeychainDeleteCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete NAME",
+		Short: "delete a coldkit key from macOS Keychain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := keychain.DeleteTronKey(args[0]); err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleted key: %s\n", args[0])
+			return nil
+		},
+	}
 }
 
 func newTronGenCommand() *cobra.Command {
@@ -184,6 +272,41 @@ func newTronBalanceCommand() *cobra.Command {
 	return cmd
 }
 
+func newTronSignHashCommand() *cobra.Command {
+	var keyName string
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "sign-hash DIGEST_HEX",
+		Short: "sign a 32-byte digest with a TRON key from macOS Keychain",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if keyName == "" {
+				return fmt.Errorf("--key is required")
+			}
+			privateKey, err := keychain.LoadTronPrivateKey(keyName)
+			if err != nil {
+				return err
+			}
+			signature, err := tron.SignDigest(privateKey, args[0])
+			if err != nil {
+				return err
+			}
+			if asJSON {
+				return writeJSONTo(cmd.OutOrStdout(), signature)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "TRON address:      %s\n", signature.AddressBase58)
+			fmt.Fprintf(cmd.OutOrStdout(), "Digest hex:        %s\n", signature.DigestHex)
+			fmt.Fprintf(cmd.OutOrStdout(), "Signature hex:     %s\n", signature.SignatureHex)
+			fmt.Fprintf(cmd.OutOrStdout(), "Recovery ID:       %d\n", signature.RecoveryID)
+			fmt.Fprintf(cmd.OutOrStdout(), "DER signature hex: %s\n", signature.DERSignatureHex)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&keyName, "key", "", "macOS Keychain key name")
+	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	return cmd
+}
+
 func newTronSelfCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:     "self",
@@ -282,7 +405,32 @@ func printPublicAccount(account tron.PublicAccount) {
 }
 
 func writeJSON(value any) error {
-	encoder := json.NewEncoder(os.Stdout)
+	return writeJSONTo(os.Stdout, value)
+}
+
+func writeJSONTo(w io.Writer, value any) error {
+	encoder := json.NewEncoder(w)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(value)
+}
+
+func readPrivateKey(cmd *cobra.Command, fromStdin bool) (string, error) {
+	if fromStdin {
+		data, err := io.ReadAll(cmd.InOrStdin())
+		if err != nil {
+			return "", fmt.Errorf("read private key from stdin: %w", err)
+		}
+		return strings.TrimSpace(string(data)), nil
+	}
+	stdin, ok := cmd.InOrStdin().(*os.File)
+	if !ok || !term.IsTerminal(int(stdin.Fd())) {
+		return "", fmt.Errorf("refusing to read a private key from non-interactive stdin; pass --private-key-stdin explicitly")
+	}
+	fmt.Fprint(cmd.ErrOrStderr(), "Private key hex: ")
+	data, err := term.ReadPassword(int(stdin.Fd()))
+	fmt.Fprintln(cmd.ErrOrStderr())
+	if err != nil {
+		return "", fmt.Errorf("read private key: %w", err)
+	}
+	return strings.TrimSpace(string(data)), nil
 }

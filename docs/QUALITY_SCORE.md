@@ -14,8 +14,8 @@ the weakest parts of the system.
 
 | Area | Score | Why | Next Step |
 | --- | --- | --- | --- |
-| Product surface | B | First TRON CLI and MCP surface exists with offline generation, validation, watch-only balances, JSON output, npm packaging, and MCP agent install helpers. | Expand `ck add-mcp` to more agent clients after validating their config formats. |
+| Product surface | B | First TRON CLI and MCP surface exists with offline generation, validation, watch-only balances, JSON output, npm packaging, MCP agent install helpers, and macOS Keychain-backed digest signing. | Add full unsigned TRON transaction parsing and signed transaction assembly on top of the signer boundary. |
 | Architecture docs | B | Repository boundaries are now project-specific and chain extensibility is documented. | Add a focused MCP protocol note if the server grows. |
-| Testing | B | Unit tests cover TRON vectors, vanity matching, watch-only balance parsing, MCP tool exposure, MCP config installation, and CI runs the local gates. | Add release build checksums and broader install smoke tests. |
+| Testing | B | Unit tests cover TRON vectors, vanity matching, watch-only balance parsing, digest signing, MCP tool exposure, MCP config installation, and CI runs the local gates. | Add release build checksums, broader install smoke tests, and manual macOS Keychain prompt verification. |
 | Observability | C | CLI/MCP are simple and mostly synchronous; there is no structured logging convention yet. | Add debug/progress output for long vanity searches without leaking secrets. |
-| Security | B | Cold/watch-only boundary and MCP secret gating are explicit. | Add reproducible release checksums and supply-chain scanning. |
+| Security | B | Cold/watch-only boundary, MCP secret gating, and the signer-not-secret-return boundary are explicit. | Add full transaction preview/confirmation semantics before expanding signing beyond digest inputs. |
