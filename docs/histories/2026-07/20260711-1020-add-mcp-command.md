@@ -15,6 +15,8 @@ the existing `ck` CLI.
 - Wrote Codex config to TOML and Claude Code config to JSON.
 - Added the `coldkit` npm bin alias for the same CLI launcher used by `ck`.
 - Bumped npm package versions to `0.1.1` for the patch release.
+- Updated pinned GitHub Actions to current Node 24-compatible releases after
+  publish validation surfaced runtime deprecation annotations.
 - Documented MCP installation in CLI and MCP docs.
 
 ## Intent
@@ -29,6 +31,8 @@ files.
 - `internal/mcpinstall/install_test.go`
 - `internal/cli/command.go`
 - `package.json`
+- `.github/workflows/ci.yml`
+- `.github/workflows/npm-publish.yml`
 - `README.md`
 - `docs/CLI.md`
 - `docs/MCP.md`
