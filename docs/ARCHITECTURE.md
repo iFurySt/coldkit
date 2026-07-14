@@ -11,7 +11,7 @@ humans and scripts, plus an MCP server for AI agents.
 - `internal/keychain/`: local key storage adapters, currently macOS Keychain for TRON signing keys.
 - `internal/mcp/`: minimal JSON-RPC stdio MCP server implementation and tool dispatch.
 - `internal/mcpinstall/`: agent-specific MCP config installers for `ck-mcp`.
-- `internal/tron/`: TRON address generation, Base58Check validation, vanity matching, deterministic self-tests, and watch-only balance lookup.
+- `internal/tron/`: TRON address generation, Base58Check validation, vanity matching, deterministic self-tests, and watch-only balance/resource lookup.
 - `docs/`: project rules, architecture, histories, and security notes.
 
 ## Boundaries
@@ -28,12 +28,13 @@ humans and scripts, plus an MCP server for AI agents.
 
 - `ck tron gen`: generate TRON accounts offline; supports repeated `-p/--prefix`, repeated `-s/--suffix`, `-n/--count`, `--max`, `--pub`, and `-j/--json`.
 - `ck tron val`: validate public TRON addresses offline.
-- `ck tron bal`: query public TRX and USDT/TRC20 balances.
+- `ck tron bal`: query public TRX, USDT/TRC20, Energy, and Bandwidth.
+- `ck tron resource`: query public TRON Energy and Bandwidth.
 - `ck tron from-private`: derive an address from a private key for verification.
 - `ck keychain import-tron`: store a TRON private key in macOS Keychain.
 - `ck tron sign-hash`: sign a 32-byte digest using a macOS Keychain-backed TRON key.
 - `ck add-mcp`: install `ck-mcp` into supported agent MCP configs.
-- `ck-mcp`: expose `tron_validate`, `tron_balance`, `tron_generate_preview`,
+- `ck-mcp`: expose `tron_validate`, `tron_balance`, `tron_resource`, `tron_generate_preview`,
   and Keychain-backed `tron_sign_hash`; optionally expose
   `tron_generate_secret`.
 

@@ -85,21 +85,57 @@ func TestGenerateAccountsRejectsZeroCount(t *testing.T) {
 
 func TestFetchBalanceWatchOnly(t *testing.T) {
 	var gotPath string
+	var gotResourcePath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"data":[{"balance":638007,"trc20":[{"TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t":"12345678"}]}]}`))
+		switch r.URL.Path {
+		case "/accounts/TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3":
+			gotPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"data":[{"balance":638007,"trc20":[{"TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t":"12345678"}]}]}`))
+		case "/wallet/getaccountresource":
+			gotResourcePath = r.URL.Path
+			_, _ = w.Write([]byte(`{"freeNetUsed":125,"freeNetLimit":600,"NetUsed":20,"NetLimit":1000,"EnergyUsed":30,"EnergyLimit":5000,"TotalNetLimit":43200000000,"TotalNetWeight":99,"TotalEnergyLimit":180000000000,"TotalEnergyWeight":88}`))
+		default:
+			http.NotFound(w, r)
+		}
 	}))
 	defer server.Close()
 
-	balance, err := FetchBalance(context.Background(), server.Client(), server.URL, "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
+	balance, err := FetchBalanceWithResources(context.Background(), server.Client(), server.URL+"/accounts", server.URL+"/wallet/getaccountresource", "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotPath != "/TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3" {
+	if gotPath != "/accounts/TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3" {
 		t.Fatalf("path = %s", gotPath)
+	}
+	if gotResourcePath != "/wallet/getaccountresource" {
+		t.Fatalf("resource path = %s", gotResourcePath)
 	}
 	if !balance.Active || balance.TRX != "0.638007" || balance.USDT != "12.345678" {
 		t.Fatalf("balance = %+v", balance)
+	}
+	if balance.Resources.FreeBandwidth.Remaining != 475 || balance.Resources.StakedBandwidth.Remaining != 980 || balance.Resources.Energy.Remaining != 4970 {
+		t.Fatalf("resources = %+v", balance.Resources)
+	}
+}
+
+func TestFetchResourcesWatchOnly(t *testing.T) {
+	var gotMethod string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"freeNetUsed":1000,"freeNetLimit":600,"NetUsed":1,"NetLimit":3,"EnergyUsed":2,"EnergyLimit":5,"tronPowerUsed":4,"tronPowerLimit":9}`))
+	}))
+	defer server.Close()
+
+	resources, err := FetchResources(context.Background(), server.Client(), server.URL, "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("method = %s", gotMethod)
+	}
+	if resources.FreeBandwidth.Remaining != 0 || resources.StakedBandwidth.Remaining != 2 || resources.TotalBandwidth.Remaining != 0 || resources.Energy.Remaining != 3 || resources.TronPower.Remaining != 5 {
+		t.Fatalf("resources = %+v", resources)
 	}
 }

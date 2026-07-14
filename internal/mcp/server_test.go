@@ -18,6 +18,9 @@ func TestToolsListHidesSecretToolsByDefault(t *testing.T) {
 	if !strings.Contains(output, "tron_sign_hash") {
 		t.Fatalf("signer tool missing: %s", output)
 	}
+	if !strings.Contains(output, "tron_resource") {
+		t.Fatalf("resource tool missing: %s", output)
+	}
 }
 
 func TestToolsListCanExposeSecretTools(t *testing.T) {

@@ -17,6 +17,7 @@ Current TRON commands:
 ck tron gen
 ck tron val T...
 ck tron bal T...
+ck tron resource T...
 ck tron from-private <PRIVATE_KEY_HEX>
 ck tron sign-hash <DIGEST_HEX> --key main
 ck tron self
@@ -79,6 +80,7 @@ Cold commands must not perform network I/O:
 Watch-only commands may perform network I/O:
 
 - `ck tron bal`
+- `ck tron resource`
 
 Watch-only commands must never accept private keys.
 

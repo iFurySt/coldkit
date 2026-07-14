@@ -12,7 +12,7 @@ Implemented:
 - TRON private-key and address generation.
 - TRON vanity prefix/suffix generation.
 - TRON address validation.
-- TRX and USDT/TRC20 watch-only balances.
+- TRX, USDT/TRC20, Energy, and Bandwidth watch-only queries.
 - Default MCP secret-tool gating.
 
 ## Next

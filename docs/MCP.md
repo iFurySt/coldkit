@@ -28,7 +28,8 @@ offline machine.
 Default tools:
 
 - `tron_validate`: validate a public TRON address offline.
-- `tron_balance`: check public TRX and USDT/TRC20 balances.
+- `tron_balance`: check public TRX, USDT/TRC20, Energy, and Bandwidth.
+- `tron_resource`: check public TRON Energy and Bandwidth.
 - `tron_generate_preview`: generate public address previews without returning private keys.
 - `tron_sign_hash`: sign a 32-byte digest with a TRON key stored in macOS
   Keychain. The private key is not returned; macOS authorizes Keychain access.
@@ -56,6 +57,7 @@ MCP tools use `<chain>_<action>`:
 ```text
 tron_validate
 tron_balance
+tron_resource
 tron_generate_preview
 tron_sign_hash
 tron_generate_secret

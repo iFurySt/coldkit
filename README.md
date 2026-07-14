@@ -69,10 +69,16 @@ Validate a public TRON address offline:
 ck tron val TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 ```
 
-Check TRX and USDT/TRC20 balances for a public address:
+Check TRX, USDT/TRC20, Energy, and Bandwidth for a public address:
 
 ```sh
 ck tron bal TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
+```
+
+Check only Energy and Bandwidth resources:
+
+```sh
+ck tron resource TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 ```
 
 Run deterministic crypto test vectors:
@@ -101,6 +107,7 @@ Default tools:
 
 - `tron_validate`
 - `tron_balance`
+- `tron_resource`
 - `tron_generate_preview`
 
 Secret tool, only exposed with `--enable-secret-tools`:

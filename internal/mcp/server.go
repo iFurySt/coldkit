@@ -146,7 +146,14 @@ func (s *Server) tools() []tool {
 		},
 		{
 			Name:        "tron_balance",
-			Description: "Check public TRX and USDT/TRC20 balances for a TRON address. This tool performs network I/O and never accepts private keys.",
+			Description: "Check public TRX, USDT/TRC20, energy, and bandwidth for a TRON address. This tool performs network I/O and never accepts private keys.",
+			InputSchema: objectSchema(map[string]any{
+				"address": map[string]any{"type": "string"},
+			}, []string{"address"}),
+		},
+		{
+			Name:        "tron_resource",
+			Description: "Check public TRON energy and bandwidth resources for a TRON address. This tool performs network I/O and never accepts private keys.",
 			InputSchema: objectSchema(map[string]any{
 				"address": map[string]any{"type": "string"},
 			}, []string{"address"}),
@@ -195,6 +202,14 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
 		return jsonText(tron.FetchBalance(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, tron.DefaultTronGridAccountsEndpoint, args.Address))
+	case "tron_resource":
+		var args addressArgs
+		if err := json.Unmarshal(params.Arguments, &args); err != nil {
+			return "", err
+		}
+		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		defer cancel()
+		return jsonText(tron.FetchResources(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, tron.DefaultTronGridResourceEndpoint, args.Address))
 	case "tron_generate_preview":
 		var args genArgs
 		if err := json.Unmarshal(params.Arguments, &args); err != nil {

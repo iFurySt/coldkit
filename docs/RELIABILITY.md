@@ -18,11 +18,12 @@ Watch-only validation can be run when network access is acceptable:
 
 ```sh
 go run ./cmd/ck tron bal TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
+go run ./cmd/ck tron resource TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 ```
 
 ## Timeouts
 
-- Watch-only balance queries use a 20 second default timeout.
+- Watch-only balance and resource queries use a 20 second default timeout.
 - Cold commands should not need timeouts, but vanity search should support `--max`
   and later `--progress`.
 

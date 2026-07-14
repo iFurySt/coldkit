@@ -81,6 +81,7 @@ func newTronCommand() *cobra.Command {
 	cmd.AddCommand(newTronFromPrivateCommand())
 	cmd.AddCommand(newTronValidateCommand())
 	cmd.AddCommand(newTronBalanceCommand())
+	cmd.AddCommand(newTronResourceCommand())
 	cmd.AddCommand(newTronSignHashCommand())
 	cmd.AddCommand(newTronSelfCommand())
 	return cmd
@@ -250,16 +251,17 @@ func newTronValidateCommand() *cobra.Command {
 func newTronBalanceCommand() *cobra.Command {
 	var asJSON bool
 	var endpoint string
+	var resourceEndpoint string
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:     "bal ADDRESS",
 		Aliases: []string{"balance", "b"},
-		Short:   "check TRX and USDT/TRC20 balances for a public address",
+		Short:   "check TRX, USDT/TRC20, energy, and bandwidth for a public address",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
-			balance, err := tron.FetchBalance(ctx, &http.Client{Timeout: timeout}, endpoint, args[0])
+			balance, err := tron.FetchBalanceWithResources(ctx, &http.Client{Timeout: timeout}, endpoint, resourceEndpoint, args[0])
 			if err != nil {
 				return err
 			}
@@ -268,6 +270,32 @@ func newTronBalanceCommand() *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
 	cmd.Flags().StringVar(&endpoint, "endpoint", tron.DefaultTronGridAccountsEndpoint, "TRON accounts API endpoint")
+	cmd.Flags().StringVar(&resourceEndpoint, "resource-endpoint", tron.DefaultTronGridResourceEndpoint, "TRON account resource API endpoint")
+	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
+	return cmd
+}
+
+func newTronResourceCommand() *cobra.Command {
+	var asJSON bool
+	var endpoint string
+	var timeout time.Duration
+	cmd := &cobra.Command{
+		Use:     "resource ADDRESS",
+		Aliases: []string{"resources", "res"},
+		Short:   "check TRON energy and bandwidth for a public address",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
+			defer cancel()
+			resources, err := tron.FetchResources(ctx, &http.Client{Timeout: timeout}, endpoint, args[0])
+			if err != nil {
+				return err
+			}
+			return printValue(resources, asJSON)
+		},
+	}
+	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	cmd.Flags().StringVar(&endpoint, "endpoint", tron.DefaultTronGridResourceEndpoint, "TRON account resource API endpoint")
 	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
 	return cmd
 }
@@ -385,6 +413,9 @@ func printValue(value any, asJSON bool) error {
 		fmt.Printf("Status:            %s\n", status)
 		fmt.Printf("TRX:               %s\n", v.TRX)
 		fmt.Printf("USDT:              %s\n", v.USDT)
+		printResources(v.Resources)
+	case tron.Resources:
+		printResources(v)
 	default:
 		return writeJSON(value)
 	}
@@ -402,6 +433,16 @@ func printPublicAccount(account tron.PublicAccount) {
 	fmt.Printf("TRON address:      %s\n", account.AddressBase58)
 	fmt.Printf("TRON hex address:  %s\n", account.AddressHex)
 	fmt.Printf("Public key hex:    %s\n", account.PublicKeyHex)
+}
+
+func printResources(resources tron.Resources) {
+	if resources.Address != "" {
+		fmt.Printf("Resource address:  %s\n", resources.Address)
+	}
+	fmt.Printf("Free bandwidth:    %d / %d remaining\n", resources.FreeBandwidth.Remaining, resources.FreeBandwidth.Limit)
+	fmt.Printf("Staked bandwidth:  %d / %d remaining\n", resources.StakedBandwidth.Remaining, resources.StakedBandwidth.Limit)
+	fmt.Printf("Total bandwidth:   %d / %d remaining\n", resources.TotalBandwidth.Remaining, resources.TotalBandwidth.Limit)
+	fmt.Printf("Energy:            %d / %d remaining\n", resources.Energy.Remaining, resources.Energy.Limit)
 }
 
 func writeJSON(value any) error {
