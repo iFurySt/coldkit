@@ -34,6 +34,9 @@ Default tools:
 - `tron_sign_hash`: sign a 32-byte digest with a TRON key stored in macOS
   Keychain. The private key is not returned; macOS authorizes Keychain access.
 
+`tron_balance` and `tron_resource` accept an optional `network` argument:
+`mainnet`, `nile`, or `shasta`. It defaults to `mainnet`.
+
 Secret tools:
 
 - `tron_generate_secret`: generate TRON accounts and return private keys. Disabled by default.

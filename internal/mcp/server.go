@@ -60,6 +60,7 @@ type genArgs struct {
 
 type addressArgs struct {
 	Address string `json:"address"`
+	Network string `json:"network"`
 }
 
 type signHashArgs struct {
@@ -147,16 +148,12 @@ func (s *Server) tools() []tool {
 		{
 			Name:        "tron_balance",
 			Description: "Check public TRX, USDT/TRC20, energy, and bandwidth for a TRON address. This tool performs network I/O and never accepts private keys.",
-			InputSchema: objectSchema(map[string]any{
-				"address": map[string]any{"type": "string"},
-			}, []string{"address"}),
+			InputSchema: addressSchema(),
 		},
 		{
 			Name:        "tron_resource",
 			Description: "Check public TRON energy and bandwidth resources for a TRON address. This tool performs network I/O and never accepts private keys.",
-			InputSchema: objectSchema(map[string]any{
-				"address": map[string]any{"type": "string"},
-			}, []string{"address"}),
+			InputSchema: addressSchema(),
 		},
 		{
 			Name:        "tron_generate_preview",
@@ -201,7 +198,7 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 		}
 		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
-		return jsonText(tron.FetchBalanceWithResources(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, nil, args.Address))
+		return jsonText(tron.FetchBalanceOnNetwork(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, args.Network, nil, args.Address))
 	case "tron_resource":
 		var args addressArgs
 		if err := json.Unmarshal(params.Arguments, &args); err != nil {
@@ -209,7 +206,7 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 		}
 		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
-		return jsonText(tron.FetchResourcesWithEndpoints(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, nil, args.Address))
+		return jsonText(tron.FetchResourcesOnNetwork(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, args.Network, nil, args.Address))
 	case "tron_generate_preview":
 		var args genArgs
 		if err := json.Unmarshal(params.Arguments, &args); err != nil {
@@ -268,6 +265,17 @@ func objectSchema(properties map[string]any, required []string) map[string]any {
 		"required":             required,
 		"additionalProperties": false,
 	}
+}
+
+func addressSchema() map[string]any {
+	return objectSchema(map[string]any{
+		"address": map[string]any{"type": "string"},
+		"network": map[string]any{
+			"type":        "string",
+			"enum":        []string{tron.NetworkMainnet, tron.NetworkNile, tron.NetworkShasta},
+			"description": "TRON network to query; defaults to mainnet",
+		},
+	}, []string{"address"})
 }
 
 func genSchema() map[string]any {

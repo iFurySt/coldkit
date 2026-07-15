@@ -17,12 +17,27 @@ const (
 	usdtTRC20Contract           = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 )
 
+const (
+	NetworkMainnet = "mainnet"
+	NetworkNile    = "nile"
+	NetworkShasta  = "shasta"
+)
+
 var DefaultTronFullNodeEndpoints = []string{
 	DefaultTronFullNodeEndpoint,
 	"http://3.225.171.164:8090",
 	"http://18.133.82.227:8090",
 	"http://15.207.144.3:8090",
 	"http://15.222.19.181:8090",
+}
+
+var NileFullNodeEndpoints = []string{
+	"https://api.nileex.io",
+	"https://nile.trongrid.io",
+}
+
+var ShastaFullNodeEndpoints = []string{
+	"https://api.shasta.trongrid.io",
 }
 
 type Balance struct {
@@ -87,6 +102,14 @@ func FetchBalance(ctx context.Context, client *http.Client, endpoint string, add
 	return FetchBalanceWithResources(ctx, client, endpointList(endpoint), address)
 }
 
+func FetchBalanceOnNetwork(ctx context.Context, client *http.Client, network string, endpoints []string, address string) (Balance, error) {
+	resolved, err := ResolveFullNodeEndpoints(network, endpoints)
+	if err != nil {
+		return Balance{}, err
+	}
+	return FetchBalanceWithResources(ctx, client, resolved, address)
+}
+
 func FetchBalanceWithResources(ctx context.Context, client *http.Client, endpoints []string, address string) (Balance, error) {
 	validated, err := ValidateAddress(address)
 	if err != nil {
@@ -120,6 +143,14 @@ func FetchBalanceWithResources(ctx context.Context, client *http.Client, endpoin
 
 func FetchResources(ctx context.Context, client *http.Client, endpoint string, address string) (Resources, error) {
 	return FetchResourcesWithEndpoints(ctx, client, endpointList(endpoint), address)
+}
+
+func FetchResourcesOnNetwork(ctx context.Context, client *http.Client, network string, endpoints []string, address string) (Resources, error) {
+	resolved, err := ResolveFullNodeEndpoints(network, endpoints)
+	if err != nil {
+		return Resources{}, err
+	}
+	return FetchResourcesWithEndpoints(ctx, client, resolved, address)
 }
 
 func FetchResourcesWithEndpoints(ctx context.Context, client *http.Client, endpoints []string, address string) (Resources, error) {
@@ -276,6 +307,48 @@ func normalizedEndpoints(endpoints []string) []string {
 	}
 	if len(normalized) == 0 {
 		return append([]string(nil), DefaultTronFullNodeEndpoints...)
+	}
+	return normalized
+}
+
+func ResolveFullNodeEndpoints(network string, endpoints []string) ([]string, error) {
+	network = strings.ToLower(strings.TrimSpace(network))
+	if network == "" || network == "main" {
+		network = NetworkMainnet
+	}
+	if custom := normalizedCustomEndpoints(endpoints); len(custom) > 0 {
+		if _, err := defaultEndpointsForNetwork(network); err != nil {
+			return nil, err
+		}
+		return custom, nil
+	}
+	defaults, err := defaultEndpointsForNetwork(network)
+	if err != nil {
+		return nil, err
+	}
+	return append([]string(nil), defaults...), nil
+}
+
+func defaultEndpointsForNetwork(network string) ([]string, error) {
+	switch network {
+	case NetworkMainnet:
+		return DefaultTronFullNodeEndpoints, nil
+	case NetworkNile:
+		return NileFullNodeEndpoints, nil
+	case NetworkShasta:
+		return ShastaFullNodeEndpoints, nil
+	default:
+		return nil, fmt.Errorf("unsupported TRON network %q; expected mainnet, nile, or shasta", network)
+	}
+}
+
+func normalizedCustomEndpoints(endpoints []string) []string {
+	var normalized []string
+	for _, endpoint := range endpoints {
+		endpoint = strings.TrimRight(strings.TrimSpace(endpoint), "/")
+		if endpoint != "" {
+			normalized = append(normalized, endpoint)
+		}
 	}
 	return normalized
 }

@@ -251,6 +251,7 @@ func newTronValidateCommand() *cobra.Command {
 func newTronBalanceCommand() *cobra.Command {
 	var asJSON bool
 	var endpoints []string
+	var network string
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:     "bal ADDRESS",
@@ -260,7 +261,7 @@ func newTronBalanceCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
-			balance, err := tron.FetchBalanceWithResources(ctx, &http.Client{Timeout: timeout}, endpoints, args[0])
+			balance, err := tron.FetchBalanceOnNetwork(ctx, &http.Client{Timeout: timeout}, network, endpoints, args[0])
 			if err != nil {
 				return err
 			}
@@ -268,6 +269,7 @@ func newTronBalanceCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	cmd.Flags().StringVar(&network, "network", tron.NetworkMainnet, "TRON network: mainnet, nile, or shasta")
 	cmd.Flags().StringArrayVar(&endpoints, "endpoint", nil, "TRON full node endpoint; repeat to override the default fallback pool")
 	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
 	return cmd
@@ -276,6 +278,7 @@ func newTronBalanceCommand() *cobra.Command {
 func newTronResourceCommand() *cobra.Command {
 	var asJSON bool
 	var endpoints []string
+	var network string
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:     "resource ADDRESS",
@@ -285,7 +288,7 @@ func newTronResourceCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
-			resources, err := tron.FetchResourcesWithEndpoints(ctx, &http.Client{Timeout: timeout}, endpoints, args[0])
+			resources, err := tron.FetchResourcesOnNetwork(ctx, &http.Client{Timeout: timeout}, network, endpoints, args[0])
 			if err != nil {
 				return err
 			}
@@ -293,6 +296,7 @@ func newTronResourceCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	cmd.Flags().StringVar(&network, "network", tron.NetworkMainnet, "TRON network: mainnet, nile, or shasta")
 	cmd.Flags().StringArrayVar(&endpoints, "endpoint", nil, "TRON full node endpoint; repeat to override the default fallback pool")
 	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
 	return cmd

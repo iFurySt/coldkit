@@ -176,3 +176,44 @@ func TestFetchBalanceFallsBackAcrossEndpoints(t *testing.T) {
 		t.Fatalf("balance = %+v", balance)
 	}
 }
+
+func TestResolveFullNodeEndpointsByNetwork(t *testing.T) {
+	tests := []struct {
+		network string
+		want    string
+	}{
+		{network: "", want: DefaultTronFullNodeEndpoint},
+		{network: "main", want: DefaultTronFullNodeEndpoint},
+		{network: "mainnet", want: DefaultTronFullNodeEndpoint},
+		{network: "nile", want: "https://api.nileex.io"},
+		{network: "shasta", want: "https://api.shasta.trongrid.io"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.network, func(t *testing.T) {
+			endpoints, err := ResolveFullNodeEndpoints(tt.network, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(endpoints) == 0 || endpoints[0] != tt.want {
+				t.Fatalf("endpoints = %#v", endpoints)
+			}
+		})
+	}
+}
+
+func TestResolveFullNodeEndpointsCustomOverridesNetworkDefaults(t *testing.T) {
+	endpoints, err := ResolveFullNodeEndpoints(NetworkNile, []string{" https://example.test/ ", ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(endpoints) != 1 || endpoints[0] != "https://example.test" {
+		t.Fatalf("endpoints = %#v", endpoints)
+	}
+}
+
+func TestResolveFullNodeEndpointsRejectsUnknownNetwork(t *testing.T) {
+	_, err := ResolveFullNodeEndpoints("unknown", nil)
+	if err == nil || !strings.Contains(err.Error(), "unsupported TRON network") {
+		t.Fatalf("err = %v", err)
+	}
+}

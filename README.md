@@ -82,8 +82,15 @@ ck tron resource TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 ```
 
 Watch-only queries use a small full node endpoint pool and automatically fall
-back when an endpoint is rate limited or unavailable. To use your own node or
-provider, repeat `--endpoint`:
+back when an endpoint is rate limited or unavailable. Use `--network` for
+testnets:
+
+```sh
+ck tron bal T... --network nile -j
+ck tron resource T... --network shasta -j
+```
+
+To use your own node or provider, repeat `--endpoint`:
 
 ```sh
 ck tron bal T... --endpoint https://api.trongrid.io --endpoint http://127.0.0.1:8090

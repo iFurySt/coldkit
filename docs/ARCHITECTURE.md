@@ -28,8 +28,8 @@ humans and scripts, plus an MCP server for AI agents.
 
 - `ck tron gen`: generate TRON accounts offline; supports repeated `-p/--prefix`, repeated `-s/--suffix`, `-n/--count`, `--max`, `--pub`, and `-j/--json`.
 - `ck tron val`: validate public TRON addresses offline.
-- `ck tron bal`: query public TRX, USDT/TRC20, Energy, and Bandwidth.
-- `ck tron resource`: query public TRON Energy and Bandwidth.
+- `ck tron bal`: query public TRX, USDT/TRC20, Energy, and Bandwidth; supports `--network mainnet|nile|shasta`.
+- `ck tron resource`: query public TRON Energy and Bandwidth; supports `--network mainnet|nile|shasta`.
 - `ck tron from-private`: derive an address from a private key for verification.
 - `ck keychain import-tron`: store a TRON private key in macOS Keychain.
 - `ck tron sign-hash`: sign a 32-byte digest using a macOS Keychain-backed TRON key.
