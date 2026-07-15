@@ -201,7 +201,7 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 		}
 		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
-		return jsonText(tron.FetchBalance(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, tron.DefaultTronGridAccountsEndpoint, args.Address))
+		return jsonText(tron.FetchBalanceWithResources(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, nil, args.Address))
 	case "tron_resource":
 		var args addressArgs
 		if err := json.Unmarshal(params.Arguments, &args); err != nil {
@@ -209,7 +209,7 @@ func (s *Server) callTool(ctx context.Context, raw json.RawMessage) (string, err
 		}
 		timeoutCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
-		return jsonText(tron.FetchResources(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, tron.DefaultTronGridResourceEndpoint, args.Address))
+		return jsonText(tron.FetchResourcesWithEndpoints(timeoutCtx, &http.Client{Timeout: 20 * time.Second}, nil, args.Address))
 	case "tron_generate_preview":
 		var args genArgs
 		if err := json.Unmarshal(params.Arguments, &args); err != nil {

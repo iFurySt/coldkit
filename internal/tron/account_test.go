@@ -84,32 +84,39 @@ func TestGenerateAccountsRejectsZeroCount(t *testing.T) {
 }
 
 func TestFetchBalanceWatchOnly(t *testing.T) {
-	var gotPath string
+	var gotAccountPath string
 	var gotResourcePath string
+	var gotTRC20Path string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/accounts/TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3":
-			gotPath = r.URL.Path
-			_, _ = w.Write([]byte(`{"data":[{"balance":638007,"trc20":[{"TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t":"12345678"}]}]}`))
+		case "/wallet/getaccount":
+			gotAccountPath = r.URL.Path
+			_, _ = w.Write([]byte(`{"address":"TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3","balance":638007}`))
 		case "/wallet/getaccountresource":
 			gotResourcePath = r.URL.Path
 			_, _ = w.Write([]byte(`{"freeNetUsed":125,"freeNetLimit":600,"NetUsed":20,"NetLimit":1000,"EnergyUsed":30,"EnergyLimit":5000,"TotalNetLimit":43200000000,"TotalNetWeight":99,"TotalEnergyLimit":180000000000,"TotalEnergyWeight":88}`))
+		case "/wallet/triggerconstantcontract":
+			gotTRC20Path = r.URL.Path
+			_, _ = w.Write([]byte(`{"result":{"result":true},"constant_result":["0000000000000000000000000000000000000000000000000000000000bc614e"]}`))
 		default:
 			http.NotFound(w, r)
 		}
 	}))
 	defer server.Close()
 
-	balance, err := FetchBalanceWithResources(context.Background(), server.Client(), server.URL+"/accounts", server.URL+"/wallet/getaccountresource", "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
+	balance, err := FetchBalanceWithResources(context.Background(), server.Client(), []string{server.URL}, "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gotPath != "/accounts/TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3" {
-		t.Fatalf("path = %s", gotPath)
+	if gotAccountPath != "/wallet/getaccount" {
+		t.Fatalf("account path = %s", gotAccountPath)
 	}
 	if gotResourcePath != "/wallet/getaccountresource" {
 		t.Fatalf("resource path = %s", gotResourcePath)
+	}
+	if gotTRC20Path != "/wallet/triggerconstantcontract" {
+		t.Fatalf("trc20 path = %s", gotTRC20Path)
 	}
 	if !balance.Active || balance.TRX != "0.638007" || balance.USDT != "12.345678" {
 		t.Fatalf("balance = %+v", balance)
@@ -137,5 +144,35 @@ func TestFetchResourcesWatchOnly(t *testing.T) {
 	}
 	if resources.FreeBandwidth.Remaining != 0 || resources.StakedBandwidth.Remaining != 2 || resources.TotalBandwidth.Remaining != 0 || resources.Energy.Remaining != 3 || resources.TronPower.Remaining != 5 {
 		t.Fatalf("resources = %+v", resources)
+	}
+}
+
+func TestFetchBalanceFallsBackAcrossEndpoints(t *testing.T) {
+	failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "rate limited", http.StatusTooManyRequests)
+	}))
+	defer failing.Close()
+	working := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/wallet/getaccount":
+			_, _ = w.Write([]byte(`{"address":"TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3","balance":1}`))
+		case "/wallet/getaccountresource":
+			_, _ = w.Write([]byte(`{"freeNetLimit":600}`))
+		case "/wallet/triggerconstantcontract":
+			_, _ = w.Write([]byte(`{"result":{"result":true},"constant_result":["0"]}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer working.Close()
+
+	balance, err := FetchBalanceWithResources(context.Background(), working.Client(), []string{failing.URL, working.URL}, "TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if balance.TRX != "0.000001" || balance.Resources.FreeBandwidth.Limit != 600 {
+		t.Fatalf("balance = %+v", balance)
 	}
 }

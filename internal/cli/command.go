@@ -250,8 +250,7 @@ func newTronValidateCommand() *cobra.Command {
 
 func newTronBalanceCommand() *cobra.Command {
 	var asJSON bool
-	var endpoint string
-	var resourceEndpoint string
+	var endpoints []string
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:     "bal ADDRESS",
@@ -261,7 +260,7 @@ func newTronBalanceCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
-			balance, err := tron.FetchBalanceWithResources(ctx, &http.Client{Timeout: timeout}, endpoint, resourceEndpoint, args[0])
+			balance, err := tron.FetchBalanceWithResources(ctx, &http.Client{Timeout: timeout}, endpoints, args[0])
 			if err != nil {
 				return err
 			}
@@ -269,15 +268,14 @@ func newTronBalanceCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
-	cmd.Flags().StringVar(&endpoint, "endpoint", tron.DefaultTronGridAccountsEndpoint, "TRON accounts API endpoint")
-	cmd.Flags().StringVar(&resourceEndpoint, "resource-endpoint", tron.DefaultTronGridResourceEndpoint, "TRON account resource API endpoint")
+	cmd.Flags().StringArrayVar(&endpoints, "endpoint", nil, "TRON full node endpoint; repeat to override the default fallback pool")
 	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
 	return cmd
 }
 
 func newTronResourceCommand() *cobra.Command {
 	var asJSON bool
-	var endpoint string
+	var endpoints []string
 	var timeout time.Duration
 	cmd := &cobra.Command{
 		Use:     "resource ADDRESS",
@@ -287,7 +285,7 @@ func newTronResourceCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
 			defer cancel()
-			resources, err := tron.FetchResources(ctx, &http.Client{Timeout: timeout}, endpoint, args[0])
+			resources, err := tron.FetchResourcesWithEndpoints(ctx, &http.Client{Timeout: timeout}, endpoints, args[0])
 			if err != nil {
 				return err
 			}
@@ -295,7 +293,7 @@ func newTronResourceCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
-	cmd.Flags().StringVar(&endpoint, "endpoint", tron.DefaultTronGridResourceEndpoint, "TRON account resource API endpoint")
+	cmd.Flags().StringArrayVar(&endpoints, "endpoint", nil, "TRON full node endpoint; repeat to override the default fallback pool")
 	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout")
 	return cmd
 }

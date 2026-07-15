@@ -32,6 +32,8 @@ go run ./cmd/ck tron resource TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 - CLI errors should exit non-zero and print concise errors to stderr.
 - JSON output should stay parseable on success.
 - MCP errors should return JSON-RPC errors, not panic or emit mixed stdout text.
+- Watch-only TRON queries should fall back across configured full node endpoints
+  for transient HTTP 429, HTTP 5xx, network, and timeout failures.
 
 ## Long Vanity Searches
 
@@ -41,7 +43,8 @@ the final result is intentionally secret-bearing.
 
 ## Operational Risks
 
-- Third-party public RPC/API outages can break watch-only balance checks.
+- Third-party public RPC/API outages and unauthenticated rate limits can break
+  watch-only balance checks if every configured endpoint fails.
 - Offline machines may lack a recent Go toolchain if building from source.
 - Users may misunderstand public preview output as spendable; docs and tool
   descriptions should keep stating that private keys are required to use funds.

@@ -17,6 +17,8 @@ not an optional hardening pass.
 
 - Cold commands must not perform network I/O.
 - Watch-only commands may use public chain APIs, but must accept public addresses only.
+- Watch-only TRON queries may fall back across public full node endpoints. They
+  send public addresses and contract calls only, never private keys.
 - Any new external API endpoint must be documented in `README.md` or a focused docs page.
 
 ## Current Sensitive Commands

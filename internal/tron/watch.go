@@ -12,10 +12,18 @@ import (
 )
 
 const (
-	DefaultTronGridAccountsEndpoint = "https://api.trongrid.io/v1/accounts"
-	DefaultTronGridResourceEndpoint = "https://api.trongrid.io/wallet/getaccountresource"
-	usdtTRC20Contract               = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+	DefaultTronFullNodeEndpoint = "https://api.trongrid.io"
+	fullNodeAttemptTimeout      = 5 * time.Second
+	usdtTRC20Contract           = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 )
+
+var DefaultTronFullNodeEndpoints = []string{
+	DefaultTronFullNodeEndpoint,
+	"http://3.225.171.164:8090",
+	"http://18.133.82.227:8090",
+	"http://15.207.144.3:8090",
+	"http://15.222.19.181:8090",
+}
 
 type Balance struct {
 	Address   string    `json:"address"`
@@ -47,13 +55,9 @@ type NetworkTotal struct {
 	Weight int64 `json:"weight"`
 }
 
-type tronGridResponse struct {
-	Data []tronGridAccount `json:"data"`
-}
-
-type tronGridAccount struct {
-	Balance json.Number         `json:"balance"`
-	TRC20   []map[string]string `json:"trc20"`
+type accountResponse struct {
+	Address string      `json:"address"`
+	Balance json.Number `json:"balance"`
 }
 
 type resourceResponse struct {
@@ -72,11 +76,18 @@ type resourceResponse struct {
 	TotalTronPowerWeight int64 `json:"totalTronPowerWeight"`
 }
 
-func FetchBalance(ctx context.Context, client *http.Client, endpoint string, address string) (Balance, error) {
-	return FetchBalanceWithResources(ctx, client, endpoint, DefaultTronGridResourceEndpoint, address)
+type triggerConstantResponse struct {
+	ConstantResult []string `json:"constant_result"`
+	Result         struct {
+		Result bool `json:"result"`
+	} `json:"result"`
 }
 
-func FetchBalanceWithResources(ctx context.Context, client *http.Client, accountsEndpoint string, resourceEndpoint string, address string) (Balance, error) {
+func FetchBalance(ctx context.Context, client *http.Client, endpoint string, address string) (Balance, error) {
+	return FetchBalanceWithResources(ctx, client, endpointList(endpoint), address)
+}
+
+func FetchBalanceWithResources(ctx context.Context, client *http.Client, endpoints []string, address string) (Balance, error) {
 	validated, err := ValidateAddress(address)
 	if err != nil {
 		return Balance{}, err
@@ -84,57 +95,34 @@ func FetchBalanceWithResources(ctx context.Context, client *http.Client, account
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second}
 	}
-	accountsEndpoint = strings.TrimRight(accountsEndpoint, "/")
-	if accountsEndpoint == "" {
-		accountsEndpoint = DefaultTronGridAccountsEndpoint
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, accountsEndpoint+"/"+validated.AddressBase58, nil)
+	endpoints = normalizedEndpoints(endpoints)
+	resources, err := FetchResourcesWithEndpoints(ctx, client, endpoints, validated.AddressBase58)
 	if err != nil {
 		return Balance{}, err
 	}
-	req.Header.Set("User-Agent", "coldkit-watch-only/1.0")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return Balance{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return Balance{}, fmt.Errorf("TronGrid returned HTTP %d", resp.StatusCode)
-	}
-
-	var payload tronGridResponse
-	decoder := json.NewDecoder(resp.Body)
-	decoder.UseNumber()
-	if err := decoder.Decode(&payload); err != nil {
-		return Balance{}, err
-	}
-
-	resources, err := FetchResources(ctx, client, resourceEndpoint, validated.AddressBase58)
-	if err != nil {
-		return Balance{}, err
-	}
-
 	balance := Balance{Address: validated.AddressBase58, TRX: "0", USDT: "0", Resources: resources}
-	if len(payload.Data) == 0 {
-		return balance, nil
+
+	account, active, err := fetchAccount(ctx, client, endpoints, validated.AddressBase58)
+	if err != nil {
+		return Balance{}, err
 	}
-	account := payload.Data[0]
-	balance.Active = true
-	if account.Balance != "" {
+	balance.Active = active
+	if active && account.Balance != "" {
 		balance.TRX = formatTokenAmount(account.Balance.String(), 6)
 	}
-	for _, token := range account.TRC20 {
-		if value, ok := token[usdtTRC20Contract]; ok {
-			balance.USDT = formatTokenAmount(value, 6)
-			break
-		}
+	usdt, err := fetchTRC20Balance(ctx, client, endpoints, validated.AddressBase58, usdtTRC20Contract, 6)
+	if err != nil {
+		return Balance{}, err
 	}
+	balance.USDT = usdt
 	return balance, nil
 }
 
 func FetchResources(ctx context.Context, client *http.Client, endpoint string, address string) (Resources, error) {
+	return FetchResourcesWithEndpoints(ctx, client, endpointList(endpoint), address)
+}
+
+func FetchResourcesWithEndpoints(ctx context.Context, client *http.Client, endpoints []string, address string) (Resources, error) {
 	validated, err := ValidateAddress(address)
 	if err != nil {
 		return Resources{}, err
@@ -142,10 +130,7 @@ func FetchResources(ctx context.Context, client *http.Client, endpoint string, a
 	if client == nil {
 		client = &http.Client{Timeout: 20 * time.Second}
 	}
-	endpoint = strings.TrimRight(endpoint, "/")
-	if endpoint == "" {
-		endpoint = DefaultTronGridResourceEndpoint
-	}
+	endpoints = normalizedEndpoints(endpoints)
 
 	body, err := json.Marshal(map[string]any{
 		"address": validated.AddressBase58,
@@ -154,26 +139,9 @@ func FetchResources(ctx context.Context, client *http.Client, endpoint string, a
 	if err != nil {
 		return Resources{}, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
-	if err != nil {
-		return Resources{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "coldkit-watch-only/1.0")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return Resources{}, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return Resources{}, fmt.Errorf("TronGrid returned HTTP %d", resp.StatusCode)
-	}
 
 	var payload resourceResponse
-	decoder := json.NewDecoder(resp.Body)
-	decoder.UseNumber()
-	if err := decoder.Decode(&payload); err != nil {
+	if err := postWithFallback(ctx, client, endpoints, "/wallet/getaccountresource", body, &payload); err != nil {
 		return Resources{}, err
 	}
 
@@ -191,6 +159,132 @@ func FetchResources(ctx context.Context, client *http.Client, endpoint string, a
 	}, nil
 }
 
+func fetchAccount(ctx context.Context, client *http.Client, endpoints []string, address string) (accountResponse, bool, error) {
+	body, err := json.Marshal(map[string]any{
+		"address": address,
+		"visible": true,
+	})
+	if err != nil {
+		return accountResponse{}, false, err
+	}
+
+	var payload accountResponse
+	if err := postWithFallback(ctx, client, endpoints, "/wallet/getaccount", body, &payload); err != nil {
+		return accountResponse{}, false, err
+	}
+	return payload, payload.Address != "" || payload.Balance != "", nil
+}
+
+func fetchTRC20Balance(ctx context.Context, client *http.Client, endpoints []string, ownerAddress string, contractAddress string, decimals int) (string, error) {
+	owner, err := ValidateAddress(ownerAddress)
+	if err != nil {
+		return "", err
+	}
+	contract, err := ValidateAddress(contractAddress)
+	if err != nil {
+		return "", err
+	}
+	body, err := json.Marshal(map[string]any{
+		"owner_address":     owner.AddressBase58,
+		"contract_address":  contract.AddressBase58,
+		"function_selector": "balanceOf(address)",
+		"parameter":         abiAddressParameter(owner.AddressHex),
+		"visible":           true,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	var payload triggerConstantResponse
+	if err := postWithFallback(ctx, client, endpoints, "/wallet/triggerconstantcontract", body, &payload); err != nil {
+		return "", err
+	}
+	if len(payload.ConstantResult) == 0 || payload.ConstantResult[0] == "" {
+		return "0", nil
+	}
+	return formatHexTokenAmount(payload.ConstantResult[0], decimals), nil
+}
+
+func postWithFallback(ctx context.Context, client *http.Client, endpoints []string, path string, body []byte, out any) error {
+	var failures []string
+	for _, endpoint := range endpoints {
+		err := postJSON(ctx, client, endpoint, path, body, out)
+		if err == nil {
+			return nil
+		}
+		failures = append(failures, fmt.Sprintf("%s: %v", endpoint, err))
+		if !isFallbackError(err) {
+			return err
+		}
+	}
+	return fmt.Errorf("all TRON full node endpoints failed: %s", strings.Join(failures, "; "))
+}
+
+func postJSON(ctx context.Context, client *http.Client, endpoint string, path string, body []byte, out any) error {
+	attemptCtx, cancel := context.WithTimeout(ctx, fullNodeAttemptTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(attemptCtx, http.MethodPost, strings.TrimRight(endpoint, "/")+path, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "coldkit-watch-only/1.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return httpStatusError(resp.StatusCode)
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	decoder.UseNumber()
+	return decoder.Decode(out)
+}
+
+type httpStatusError int
+
+func (e httpStatusError) Error() string {
+	return fmt.Sprintf("HTTP %d", int(e))
+}
+
+func isFallbackError(err error) bool {
+	status, ok := err.(httpStatusError)
+	if !ok {
+		return true
+	}
+	return status == http.StatusTooManyRequests || status >= 500
+}
+
+func endpointList(endpoint string) []string {
+	if strings.TrimSpace(endpoint) == "" {
+		return nil
+	}
+	return []string{endpoint}
+}
+
+func normalizedEndpoints(endpoints []string) []string {
+	var normalized []string
+	for _, endpoint := range endpoints {
+		endpoint = strings.TrimRight(strings.TrimSpace(endpoint), "/")
+		if endpoint != "" {
+			normalized = append(normalized, endpoint)
+		}
+	}
+	if len(normalized) == 0 {
+		return append([]string(nil), DefaultTronFullNodeEndpoints...)
+	}
+	return normalized
+}
+
+func abiAddressParameter(addressHex string) string {
+	addressHex = strings.TrimPrefix(strings.ToLower(addressHex), "41")
+	return strings.Repeat("0", 64-len(addressHex)) + addressHex
+}
+
 func usage(used int64, limit int64) ResourceUsage {
 	remaining := limit - used
 	if remaining < 0 {
@@ -204,6 +298,18 @@ func formatTokenAmount(raw string, decimals int) string {
 	if !ok || value.Sign() == 0 {
 		return "0"
 	}
+	return formatBigTokenAmount(value, decimals)
+}
+
+func formatHexTokenAmount(raw string, decimals int) string {
+	value, ok := new(big.Int).SetString(strings.TrimPrefix(raw, "0x"), 16)
+	if !ok || value.Sign() == 0 {
+		return "0"
+	}
+	return formatBigTokenAmount(value, decimals)
+}
+
+func formatBigTokenAmount(value *big.Int, decimals int) string {
 	divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
 	whole := new(big.Int).Div(new(big.Int).Set(value), divisor)
 	fraction := new(big.Int).Mod(value, divisor).Text(10)

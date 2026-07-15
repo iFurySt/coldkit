@@ -84,6 +84,14 @@ Watch-only commands may perform network I/O:
 
 Watch-only commands must never accept private keys.
 
+Watch-only queries use a small TRON full node endpoint pool and automatically
+fall back when an endpoint is rate limited, unavailable, or times out. Repeat
+`--endpoint` to override the default pool with your own node or provider:
+
+```sh
+ck tron bal T... --endpoint https://api.trongrid.io --endpoint http://127.0.0.1:8090 -j
+```
+
 ## macOS Keychain Signing
 
 `ck keychain import-tron NAME` stores a TRON private key in macOS Keychain and
