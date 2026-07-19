@@ -82,6 +82,7 @@ func newTronCommand() *cobra.Command {
 	cmd.AddCommand(newTronValidateCommand())
 	cmd.AddCommand(newTronBalanceCommand())
 	cmd.AddCommand(newTronResourceCommand())
+	cmd.AddCommand(newTronTRC20TransferCommand())
 	cmd.AddCommand(newTronSignHashCommand())
 	cmd.AddCommand(newTronSelfCommand())
 	return cmd
@@ -302,6 +303,57 @@ func newTronResourceCommand() *cobra.Command {
 	return cmd
 }
 
+func newTronTRC20TransferCommand() *cobra.Command {
+	var asJSON bool
+	var token string
+	var contract string
+	var decimals int
+	var owner string
+	var endpoints []string
+	var network string
+	var timeout time.Duration
+	cmd := &cobra.Command{
+		Use:     "trc20-transfer TO_ADDRESS AMOUNT",
+		Aliases: []string{"usdt-transfer", "trc20-data"},
+		Short:   "build and optionally dry-run TRC20 transfer call data without broadcasting",
+		Args:    cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			preview, err := tron.BuildTRC20TransferPreview(tron.TRC20TransferOptions{
+				Token:           token,
+				ContractAddress: contract,
+				ToAddress:       args[0],
+				Amount:          args[1],
+				Decimals:        decimals,
+			})
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(owner) != "" {
+				ctx, cancel := context.WithTimeout(cmd.Context(), timeout)
+				defer cancel()
+				dryRun, err := tron.SimulateTRC20TransferOnNetwork(ctx, &http.Client{Timeout: timeout}, network, endpoints, owner, preview)
+				preview.DryRun = &dryRun
+				if err != nil {
+					if asJSON {
+						_ = writeJSONTo(cmd.OutOrStdout(), preview)
+					}
+					return err
+				}
+			}
+			return printValue(preview, asJSON)
+		},
+	}
+	cmd.Flags().BoolVarP(&asJSON, "json", "j", false, "print JSON")
+	cmd.Flags().StringVar(&token, "token", "USDT", "token symbol for preview output")
+	cmd.Flags().StringVar(&contract, "contract", tron.USDTTRC20Contract, "TRC20 contract address")
+	cmd.Flags().IntVar(&decimals, "decimals", 6, "token decimal places")
+	cmd.Flags().StringVar(&owner, "owner", "", "owner address for watch-only dry-run simulation; no transaction is broadcast")
+	cmd.Flags().StringVar(&network, "network", tron.NetworkMainnet, "TRON network for dry-run: mainnet, nile, or shasta")
+	cmd.Flags().StringArrayVar(&endpoints, "endpoint", nil, "TRON full node endpoint for dry-run; repeat to override the default fallback pool")
+	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "HTTP timeout for dry-run")
+	return cmd
+}
+
 func newTronSignHashCommand() *cobra.Command {
 	var keyName string
 	var asJSON bool
@@ -418,6 +470,8 @@ func printValue(value any, asJSON bool) error {
 		printResources(v.Resources)
 	case tron.Resources:
 		printResources(v)
+	case tron.TRC20TransferPreview:
+		printTRC20TransferPreview(v)
 	default:
 		return writeJSON(value)
 	}
@@ -445,6 +499,33 @@ func printResources(resources tron.Resources) {
 	fmt.Printf("Staked bandwidth:  %d / %d remaining\n", resources.StakedBandwidth.Remaining, resources.StakedBandwidth.Limit)
 	fmt.Printf("Total bandwidth:   %d / %d remaining\n", resources.TotalBandwidth.Remaining, resources.TotalBandwidth.Limit)
 	fmt.Printf("Energy:            %d / %d remaining\n", resources.Energy.Remaining, resources.Energy.Limit)
+}
+
+func printTRC20TransferPreview(preview tron.TRC20TransferPreview) {
+	fmt.Printf("Token:             %s\n", preview.Token)
+	fmt.Printf("Contract:          %s\n", preview.ContractAddress)
+	fmt.Printf("To address:        %s\n", preview.ToAddress)
+	fmt.Printf("Amount:            %s\n", preview.Amount)
+	fmt.Printf("Amount raw:        %s\n", preview.AmountRaw)
+	fmt.Printf("Decimals:          %d\n", preview.Decimals)
+	fmt.Printf("Function selector: %s\n", preview.FunctionSelector)
+	fmt.Printf("Method ID:         %s\n", preview.MethodID)
+	fmt.Printf("Parameter:         %s\n", preview.Parameter)
+	fmt.Printf("Call data:         %s\n", preview.Data)
+	if preview.DryRun != nil {
+		status := "failed"
+		if preview.DryRun.OK {
+			status = "ok"
+		}
+		fmt.Printf("Dry-run:           %s\n", status)
+		fmt.Printf("Owner address:     %s\n", preview.DryRun.OwnerAddress)
+		if preview.DryRun.EnergyUsed > 0 {
+			fmt.Printf("Energy estimate:   %d\n", preview.DryRun.EnergyUsed)
+		}
+		if preview.DryRun.Message != "" {
+			fmt.Printf("Dry-run message:   %s\n", preview.DryRun.Message)
+		}
+	}
 }
 
 func writeJSON(value any) error {

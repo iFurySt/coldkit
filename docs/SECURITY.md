@@ -19,6 +19,9 @@ not an optional hardening pass.
 - Watch-only commands may use public chain APIs, but must accept public addresses only.
 - Watch-only TRON queries may fall back across public full node endpoints. They
   send public addresses and contract calls only, never private keys.
+- `ck tron trc20-transfer` builds unsigned TRC20 call data locally. Its optional
+  `--owner` dry-run sends public owner, contract, recipient, and amount data to
+  a TRON full node, but it does not sign or broadcast.
 - Any new external API endpoint must be documented in `README.md` or a focused docs page.
 
 ## Current Sensitive Commands

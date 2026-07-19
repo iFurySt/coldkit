@@ -81,6 +81,19 @@ Check only Energy and Bandwidth resources:
 ck tron resource TJzXt1sZautjqXnpjQT4xSCBHNSYgBkDr3 -j
 ```
 
+Build USDT/TRC20 transfer call data without signing or broadcasting:
+
+```sh
+ck tron trc20-transfer TJhSVPzbatkY5rLGWapBVSXpL5Ws7ZVx6J 30 -j
+```
+
+Add `--owner` to dry-run the contract call before using the data with an
+external signer or broadcaster:
+
+```sh
+ck tron trc20-transfer TJhSVPzbatkY5rLGWapBVSXpL5Ws7ZVx6J 30 --owner T... -j
+```
+
 Watch-only queries use a small full node endpoint pool and automatically fall
 back when an endpoint is rate limited or unavailable. Use `--network` for
 testnets:

@@ -18,6 +18,7 @@ ck tron gen
 ck tron val T...
 ck tron bal T...
 ck tron resource T...
+ck tron trc20-transfer T... 30 --owner T...
 ck tron from-private <PRIVATE_KEY_HEX>
 ck tron sign-hash <DIGEST_HEX> --key main
 ck tron self
@@ -81,6 +82,7 @@ Watch-only commands may perform network I/O:
 
 - `ck tron bal`
 - `ck tron resource`
+- `ck tron trc20-transfer ... --owner T...`
 
 Watch-only commands must never accept private keys.
 
@@ -100,6 +102,38 @@ provider:
 ck tron bal T... --network nile -j
 ck tron resource T... --network shasta -j
 ck tron bal T... --endpoint https://api.trongrid.io --endpoint http://127.0.0.1:8090 -j
+```
+
+## TRC20 Transfer Preview
+
+`ck tron trc20-transfer` builds TRC20 `transfer(address,uint256)` call data
+without signing or broadcasting a transaction. It defaults to USDT/TRC20 and
+6 decimals:
+
+```sh
+ck tron trc20-transfer TJhSVPzbatkY5rLGWapBVSXpL5Ws7ZVx6J 30 -j
+```
+
+The command validates the destination address, converts the decimal amount to
+raw token units, ABI-encodes the transfer parameter, and round-trips the encoded
+address and amount before printing output. This avoids hand-written hex such as
+retaining the TRON `41` address prefix in the wrong ABI word.
+
+Pass `--owner` to dry-run the contract call through `/wallet/triggerconstantcontract`
+before any external signer or broadcaster uses the call data:
+
+```sh
+ck tron trc20-transfer TJhSVPzbatkY5rLGWapBVSXpL5Ws7ZVx6J 30 --owner T... -j
+```
+
+Dry-run mode uses the same `--network`, repeated `--endpoint`, and `--timeout`
+flags as other watch-only network commands. A dry-run failure returns a non-zero
+exit status and includes the node message, such as a `REVERT` response.
+
+For non-USDT tokens, provide the token metadata explicitly:
+
+```sh
+ck tron trc20-transfer T... 12.5 --token TOKEN --contract T... --decimals 6 -j
 ```
 
 ## macOS Keychain Signing
